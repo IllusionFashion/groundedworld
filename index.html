@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grounded World</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; font-family: 'Courier New', monospace; user-select: none; }
+canvas { display: block; }
+
+#startScreen, #difficultyScreen, #rulesScreen, #gameOverlay {
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: #1a1a1a; display: none; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 100; color: #fff;
+}
+#startScreen { display: flex; }
+#startTitle { font-size: 88px; font-weight: bold; text-shadow: 4px 4px #000; margin-bottom: 10px; color: #4CAF50; }
+#startSubtitle { font-size: 36px; text-shadow: 2px 2px #000; margin-bottom: 40px; color: #ccc; }
+#startPrompt { font-size: 28px; color: #4CAF50; text-shadow: 2px 2px #000; margin-top: 20px; font-weight: bold; }
+#startInspired { position: absolute; bottom: 20px; left: 20px; font-size: 18px; color: #888; text-shadow: 1px 1px #000; }
+#exitBtnMenu { position: absolute; bottom: 30px; right: 30px; font-size: 24px; background: rgba(255,0,0,0.7); padding: 12px 24px; border-radius: 12px; cursor: pointer; color: white; border: 2px solid #aa0000; }
+#exitBtnMenu:hover { background: #ff0000; transform: scale(1.05); }
+
+#difficultyTitle { font-size: 72px; font-weight: bold; text-shadow: 3px 3px #000; margin-bottom: 60px; color: #FFD700; }
+.difficulty-btn { width: 420px; padding: 20px; margin: 15px; font-size: 28px; font-weight: bold; border: 4px solid #000; cursor: pointer; transition: all 0.2s; }
+.difficulty-btn:hover { transform: scale(1.05); }
+#easyBtn { background-color: #4CAF50; color: #fff; }
+#normalBtn { background-color: #FFC107; color: #000; }
+#hardBtn { background-color: #FF5722; color: #fff; }
+#extremeBtn { background-color: #9C27B0; color: #fff; }
+#infinityBtn { background-color: #607D8B; color: #fff; }
+
+#rulesTitle { font-size: 64px; font-weight: bold; text-shadow: 3px 3px #000; margin-bottom: 40px; color: #2196F3; }
+#rulesContent { max-width: 950px; font-size: 19px; line-height: 1.8; text-align: left; background-color: rgba(0,0,0,0.5); padding: 30px; border: 3px solid #444; margin-bottom: 30px; }
+#rulesCountdown { position: absolute; bottom: 30px; right: 30px; font-size: 48px; font-weight: bold; color: #FF0000; text-shadow: 2px 2px #000; }
+#rulesStartPrompt { font-size: 32px; color: #4CAF50; text-shadow: 2px 2px #000; display: none; }
+
+#statusBar { position: absolute; top: 20px; left: 20px; display: none; flex-direction: column; gap: 12px; z-index: 5; }
+.health-group, .hunger-group { display: flex; gap: 4px; }
+.heart, .hunger { width: 32px; height: 32px; background-size: cover; }
+.heart { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23FF0000" d="M16 28l-1.4-1.3C6.4 20.4 2 16.3 2 11.5 2 7.9 4.9 5 8.5 5c2.2 0 4.2 1.1 5.3 2.8C14.9 6.1 16.9 5 19.1 5c3.6 0 6.5 2.9 6.5 6.5 0 4.8-4.4 8.9-12.6 15.2L16 28z"/></svg>'); }
+.heart.empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23808080" d="M16 28l-1.4-1.3C6.4 20.4 2 16.3 2 11.5 2 7.9 4.9 5 8.5 5c2.2 0 4.2 1.1 5.3 2.8C14.9 6.1 16.9 5 19.1 5c3.6 0 6.5 2.9 6.5 6.5 0 4.8-4.4 8.9-12.6 15.2L16 28z"/></svg>'); }
+.hunger { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23FFA500" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 24c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm-2-14h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>'); }
+.hunger.empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23808080" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 24c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm-2-14h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>'); }
+
+#dayCounter { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; font-size: 22px; font-weight: bold; color: #ffffbb; text-shadow: 1px 1px #000; z-index: 5; display: none; }
+#topRightUI {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 100;
+}
+#victoryTimer { background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px #000; display: none; }
+#langToggle, #soundToggle { font-size: 24px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 40px; cursor: pointer; color: white; font-weight: bold; user-select: none; }
+#soundToggle { font-size: 32px; }
+
+#hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 4px; background-color: rgba(0,0,0,0.7); padding: 8px; border: 4px solid #000; z-index: 5; }
+.hotbar-slot { width: 48px; height: 48px; background-color: #333; border: 2px solid #555; position: relative; cursor: pointer; }
+.hotbar-slot.selected { border-color: #ffff00; box-shadow: 0 0 10px #ffff00; }
+.slot-number { position: absolute; top: 2px; left: 4px; color: #fff; font-size: 12px; }
+.block-preview { width: 32px; height: 32px; margin: 6px auto; border-radius: 2px; }
+.item-count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 14px; font-weight: bold; }
+
+#crosshair { position: absolute; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; z-index: 4; transform: translate(-50%, -50%); display: none; }
+#crosshair::after, #crosshair::before { content: ''; position: absolute; background-color: rgba(255,255,255,0.8); }
+#crosshair::after { top: 50%; left: -10px; right: -10px; height: 2px; }
+#crosshair::before { left: 50%; top: -10px; bottom: -10px; width: 2px; }
+
+#overlayTitle { font-size: 72px; font-weight: bold; margin-bottom: 20px; text-shadow: 4px 4px #000; }
+#overlaySubtitle { font-size: 24px; color: #fff; margin-bottom: 40px; }
+#overlayHint { font-size: 22px; color: #ccc; line-height: 1.6; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="startScreen">
+    <div id="startTitle">Grounded World</div>
+    <div id="startSubtitle">By Illusion Fashion</div>
+    <div id="startPrompt">Press E to play</div>
+    <div id="startInspired">A unique experience, based on MC inspiration</div>
+    <div id="exitBtnMenu">❌ Exit</div>
+</div>
+
+<div id="difficultyScreen">
+    <div id="difficultyTitle">Select Difficulty</div>
+    <div class="difficulty-btn" id="easyBtn">Easy - 2:00 Win</div>
+    <div class="difficulty-btn" id="normalBtn">Normal - 2:00 Win</div>
+    <div class="difficulty-btn" id="hardBtn">Hard - 2:00 Win</div>
+    <div class="difficulty-btn" id="extremeBtn">Extreme - 4:00 Win</div>
+    <div class="difficulty-btn" id="infinityBtn">Infinity - Endless</div>
+</div>
+
+<div id="rulesScreen">
+    <div id="rulesTitle">Game Rules & Controls</div>
+    <div id="rulesContent">
+        <strong>Movement:</strong><br>
+        - W/A/S/D or Arrow Keys: Move player<br>
+        - Spacebar: Jump<br><br>
+        <strong>Combat & Building:</strong><br>
+        - Left Click: Attack zombies / Mine blocks (All blocks breakable!)<br>
+        - T Key: Place selected block (Blocks block zombies!)<br>
+        - 1-9 Keys: Switch hotbar items<br><br>
+        <strong>Health & Hunger:</strong><br>
+        - ❤️ Health: 10 total, don't let it reach 0!<br>
+        - 🍖 Hunger: 10 total, eat zombie meat to restore<br>
+        - Health regenerates over time (except Extreme mode)<br><br>
+        <strong>Day & Night:</strong><br>
+        - Day: Bright sky, normal zombies<br>
+        - Night: Dark sky, MORE zombies spawn<br>
+        - Build a shelter to survive nights!
+    </div>
+    <div id="rulesCountdown">10</div>
+    <div id="rulesStartPrompt">Press any button to start!</div>
+</div>
+
+<div id="statusBar">
+    <div class="health-group" id="healthContainer"></div>
+    <div class="hunger-group" id="hungerContainer"></div>
+</div>
+<div id="dayCounter">🌞 Day 1</div>
+<div id="topRightUI">
+    <div id="victoryTimer">⏱️ 02:00</div>
+    <div id="langToggle">EN</div>
+    <div id="soundToggle">🔊</div>
+</div>
+<div id="hotbar">
+    <div class="hotbar-slot selected" data-slot="0"><div class="slot-number">1</div><div class="block-preview" style="background-color: #228B22;"></div><div class="item-count">64</div></div>
+    <div class="hotbar-slot" data-slot="1"><div class="slot-number">2</div><div class="block-preview" style="background-color: #8B4513;"></div><div class="item-count">64</div></div>
+    <div class="hotbar-slot" data-slot="2"><div class="slot-number">3</div><div class="block-preview" style="background-color: #A0522D;"></div><div class="item-count">1</div></div>
+    <div class="hotbar-slot" data-slot="3"><div class="slot-number">4</div><div class="block-preview"></div><div class="item-count"></div></div>
+    <div class="hotbar-slot" data-slot="4"><div class="slot-number">5</div><div class="block-preview"></div><div class="item-count"></div></div>
+    <div class="hotbar-slot" data-slot="5"><div class="slot-number">6</div><div class="block-preview"></div><div class="item-count"></div></div>
+    <div class="hotbar-slot" data-slot="6"><div class="slot-number">7</div><div class="block-preview"></div><div class="item-count"></div></div>
+    <div class="hotbar-slot" data-slot="7"><div class="slot-number">8</div><div class="block-preview"></div><div class="item-count"></div></div>
+    <div class="hotbar-slot" data-slot="8"><div class="slot-number">9</div><div class="block-preview"></div><div class="item-count"></div></div>
+</div>
+<div id="crosshair"></div>
+
+<div id="gameOverlay">
+    <div id="overlayTitle">GAME OVER</div>
+    <div id="overlaySubtitle">You died!</div>
+    <div id="overlayHint">Press R to Respawn | Press H to Difficulties | Press T to Main Menu</div>
+</div>
+
+<script>
+// ========== 100% 隔离的双语系统 ==========
+const LANG = {
+    en: {
+        startTitle: "Grounded World", startSubtitle: "By Illusion Fashion", startPrompt: "Press E to play",
+        startInspired: "A unique experience, based on MC inspiration", exitBtnMenu: "❌ Exit",
+        difficultyTitle: "Select Difficulty", easy: "Easy - 2:00 Win", normal: "Normal - 2:00 Win",
+        hard: "Hard - 2:00 Win", extreme: "Extreme - 4:00 Win", infinity: "Infinity - Endless",
+        rulesTitle: "Game Rules & Controls",
+        rulesContent: `
+            <strong>Movement:</strong><br>- W/A/S/D or Arrow Keys: Move player<br>- Spacebar: Jump<br><br>
+            <strong>Combat & Building:</strong><br>- Left Click: Attack zombies / Mine blocks<br>- T Key: Place selected block<br>- 1-9 Keys: Switch hotbar items<br><br>
+            <strong>Health & Hunger:</strong><br>- ❤️ Health: 10 total<br>- 🍖 Hunger: 10 total, eat zombie meat to restore<br>- Health regenerates over time (except Extreme mode)<br><br>
+            <strong>Day & Night:</strong><br>- Day: Bright sky, normal zombies<br>- Night: Dark sky, MORE zombies spawn<br>- Build a shelter!
+        `,
+        rulesStartPrompt: "Press any button to start!", gameOver: "GAME OVER", success: "SUCCESS!",
+        youSurvived: "You survived!", youStarved: "You starved to death!", youFell: "You fell into the void!",
+        killedByZombie: "You were killed by a zombie!", controlHint: "Press R to Respawn | Press H to Difficulties | Press T to Main Menu", day: "🌞 Day "
+    },
+    zh: {
+        startTitle: "坐落世界", startSubtitle: "由 Illusion Fashion 制作", startPrompt: "按 E 开始游戏",
+        startInspired: "独特体验，灵感源于MC", exitBtnMenu: "❌ 退出",
+        difficultyTitle: "选择难度", easy: "简单 - 2:00 胜利", normal: "普通 - 2:00 胜利",
+        hard: "困难 - 2:00 胜利", extreme: "极限 - 4:00 胜利", infinity: "无限 - 无尽生存",
+        rulesTitle: "游戏规则与操作",
+        rulesContent: `
+            <strong>移动：</strong><br>- W/A/S/D 或方向键：移动玩家<br>- 空格键：跳跃<br><br>
+            <strong>战斗与建造：</strong><br>- 左键：攻击僵尸 / 挖掘方块<br>- T 键：放置方块<br>- 1-9 键：切换快捷栏物品<br><br>
+            <strong>生命值与饥饿值：</strong><br>- ❤️ 生命值：共10点<br>- 🍖 饥饿值：共10点，吃僵尸肉恢复<br>- 生命值随时间恢复（极限模式除外）<br><br>
+            <strong>昼夜循环：</strong><br>- 白天：明亮天空，正常僵尸数量<br>- 夜晚：黑暗天空，更多僵尸生成！<br>- 建造庇护所！
+        `,
+        rulesStartPrompt: "按任意键开始！", gameOver: "游戏结束", success: "恭喜通关！",
+        youSurvived: "你存活下来了！", youStarved: "你饿死了！", youFell: "你坠入虚空了！",
+        killedByZombie: "你被僵尸杀死了！", controlHint: "按 R 复活 | 按 H 难度选择 | 按 T 主菜单", day: "🌞 第 "
+    }
+};
+
+let currentLang = 'en';
+let soundMuted = false;
+let gameState = 'start';
+let rulesCountdown = 10;
+let rulesCanStart = false;
+let currentDay = 1;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const BLOCK_SIZE = 48;
+const WORLD_HEIGHT = 64;
+const DAY_LENGTH = 85000;
+const DAY_TIME = 45000;
+const DUSK_DURATION = 4000;   // 黄昏渐变4秒
+const DAWN_DURATION = 4000;    // 黎明渐变4秒
+const NIGHT_TIME = 32000;      // 纯夜晚32秒
+const GRAVITY = 0.5;
+const WORLD_SEED = 54321;
+const ATTACK_RANGE = BLOCK_SIZE * 3.5;
+const WORLD_LEFT_BOUND = 0;
+const WORLD_RIGHT_BOUND = 200 * BLOCK_SIZE;
+const ITEM_LIFETIME = 4000;
+
+const DIFFICULTY = {
+    EASY: { zombieHealth: 3, minZombies:1, maxZombies:3, victoryTime:120000, regenInterval:6000, regenAmount:1 },
+    NORMAL: { zombieHealth:3, minZombies:2, maxZombies:5, victoryTime:120000, regenInterval:6000, regenAmount:1 },
+    HARD: { zombieHealth:5, minZombies:1, maxZombies:3, victoryTime:120000, regenInterval:10000, regenAmount:1 },
+    EXTREME: { zombieHealth:10, minZombies:1, maxZombies:3, victoryTime:240000, regenInterval:0, regenAmount:0 },
+    INFINITY: { zombieHealth:4, minZombies:1, maxZombies:4, victoryTime:0, regenInterval:8000, regenAmount:1 }
+};
+let currentDifficulty = DIFFICULTY.EASY;
+
+const BLOCK_TYPES = {
+    AIR: { id: 0, color: 'transparent', solid: false },
+    GRASS: { id: 1, color: '#228B22', solid: true, drop: 'GRASS' },
+    DIRT: { id: 2, color: '#8B4513', solid: true, drop: 'DIRT' },
+    STONE: { id: 3, color: '#808080', solid: true, drop: 'STONE' },
+    WOOD: { id: 8, color: '#6B4423', solid: true, drop: 'WOOD' },
+    LEAVES: { id: 9, color: '#1B5E20', solid: false, drop: null },
+    PLACED: { id: 10, color: '#5D4037', solid: true, drop: 'DIRT' }
+};
+
+const FOOD_TYPES = {
+    RAW_ZOMBIE_MEAT: { hungerRestore: 2, healthRestore: 1, color: '#8B4513' }
+};
+
+const player = {
+    x: canvas.width / 2, y: 10 * BLOCK_SIZE, w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 1.8,
+    vx: 0, vy: 0, speed: 5, jumpPower: -12, onGround: false,
+    health: 10, hunger: 10, lastHungerDrop: 0, lastHealthRegen: 0,
+    hotbar: [
+        { type: 'GRASS', count: 64 }, { type: 'DIRT', count: 64 }, { type: 'WOOD', count: 1 },
+        null, null, null, null, null, null
+    ],
+    selectedHotbar: 0, animFrame: 0, animTimer: 0, attackCooldown: 0
+};
+
+const camera = { x: 0, y: 0 };
+let world = [];
+let mobs = [];
+let droppedItems = [];
+let dayTime = 0;
+let isGameOver = false;
+let damageCooldown = 0;
+const keys = {};
+const mouse = { x: 0, y: 0, button: 0 };
+let lastTimestamp = 0;
+let lastZombieSpawnTime = 0;
+let survivalTime = 0;
+
+// ========== 核心：地形生成（不刷新已破坏方块） ==========
+function noise2D(x,y,seed) { const n = Math.sin(x*12.9898 + y*78.233 + seed)*43758.5453; return n - Math.floor(n); }
+function perlinNoise2D(x,y,seed,oct=3) { let total=0,f=1,a=1,max=0; for(let i=0;i<oct;i++){total+=noise2D(x*f,y*f,seed)*a; max+=a; a*=0.5; f*=2; } return total/max; }
+
+function initWorldArray() {
+    world = [];
+    for (let x = 0; x <= WORLD_RIGHT_BOUND/BLOCK_SIZE + 10; x++) {
+        world[x] = Array(WORLD_HEIGHT).fill(BLOCK_TYPES.AIR);
+    }
+}
+
+function generateNewWorld() {
+    initWorldArray();
+    // 预生成所有地形
+    for (let x = 0; x <= WORLD_RIGHT_BOUND/BLOCK_SIZE + 10; x++) {
+        const height = Math.floor(perlinNoise2D(x / 25, 0, WORLD_SEED) * 4) + 18;
+        for (let y = 0; y < WORLD_HEIGHT; y++) {
+            if (y === height) world[x][y] = BLOCK_TYPES.GRASS;
+            else if (y > height && y < height + 3) world[x][y] = BLOCK_TYPES.DIRT;
+            else if (y >= height + 3) world[x][y] = BLOCK_TYPES.STONE;
+        }
+        // 生成树木
+        if (Math.random() < 0.02) {
+            for (let ty = height - 4; ty < height; ty++) if (ty >= 0) world[x][ty] = BLOCK_TYPES.WOOD;
+            for (let tx = x - 1; tx <= x + 1; tx++) {
+                for (let ty = height - 5; ty < height - 3; ty++) {
+                    if (tx >= 0 && ty >= 0) world[tx][ty] = BLOCK_TYPES.LEAVES;
+                }
+            }
+        }
+    }
+    
+    mobs = []; droppedItems = []; dayTime = 0; currentDay = 1; survivalTime = 0;
+    isGameOver = false; player.lastHungerDrop = 0; player.lastHealthRegen = 0; lastZombieSpawnTime = 0;
+    document.getElementById('gameOverlay').style.display = 'none';
+    document.getElementById('victoryTimer').style.display = (currentDifficulty.victoryTime > 0) ? 'block' : 'none';
+    
+    player.x = canvas.width / 2; player.y = 10 * BLOCK_SIZE; player.vx = 0; player.vy = 0;
+    player.health = 10; player.hunger = 10;
+    player.hotbar = [ { type: 'GRASS', count: 64 }, { type: 'DIRT', count: 64 }, { type: 'WOOD', count: 1 }, null, null, null, null, null, null ];
+    player.selectedHotbar = 0;
+    
+    updateStatusUI(); updateHotbarUI();
+    document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
+}
+
+// ========== 🔴 核心修复：不卡方块的碰撞检测 ==========
+function checkCollision(x, y, w, h) {
+    const m = 4;
+    const startX = Math.floor((x + m) / BLOCK_SIZE);
+    const endX = Math.floor((x + w - m) / BLOCK_SIZE);
+    const startY = Math.floor(y / BLOCK_SIZE);
+    const endY = Math.floor((y + h) / BLOCK_SIZE);
+    
+    for (let bx = startX; bx <= endX; bx++) {
+        for (let by = startY; by <= endY; by++) {
+            if (world[bx] && world[bx][by] && world[bx][by].solid) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// ========== 昼夜循环 ==========
+function updateDayNightCycle(deltaTime) {
+    if (gameState !== 'playing') return;
+    dayTime += deltaTime;
+    if (dayTime >= DAY_LENGTH) {
+        dayTime -= DAY_LENGTH;
+        currentDay++;
+        document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
+    }
+}
+
+function getSkyColor() {
+  const duskEnd = DAY_TIME + DUSK_DURATION;
+  const dawnStart = duskEnd + NIGHT_TIME;
+
+  // 1. 纯白天：0~45秒 → 亮蓝色
+  if (dayTime <= DAY_TIME) {
+    return 'rgb(135, 206, 235)';
+  }
+
+  // 2. 黄昏渐变：45~49秒 → 蓝天→橙夕阳→深蓝夜（4秒平滑）
+  if (dayTime <= duskEnd) {
+    const prog = (dayTime - DAY_TIME) / DUSK_DURATION;
+    const r = Math.floor(135 + (255-135)*prog);
+    const g = Math.floor(206 + (140-206)*prog);
+    const b = Math.floor(235 + (0-235)*prog);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // 3. 纯夜晚：49~81秒 → 深黑夜色
+  if (dayTime <= dawnStart) {
+    return 'rgb(18, 18, 40)';
+  }
+
+  // 4. 黎明渐变：81秒最后4秒 → 黑夜→蓝天（4秒平滑）
+  const prog = (dayTime - dawnStart) / DAWN_DURATION;
+  const r = Math.floor(18 + (135-18)*prog);
+  const g = Math.floor(18 + (206-18)*prog);
+  const b = Math.floor(40 + (235-40)*prog);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+function isNightTime() {
+  const duskEnd = DAY_TIME + DUSK_DURATION;
+  const dawnStart = duskEnd + NIGHT_TIME;
+  return dayTime > DAY_TIME && dayTime < dawnStart;
+}
+// ========== 玩家更新 ==========
+function updatePlayer(deltaTime, currentTime) {
+    if (isGameOver || gameState !== 'playing') return;
+
+    player.vx = 0;
+    if (keys['a'] || keys['A'] || keys['ArrowLeft']) player.vx = -player.speed;
+    if (keys['d'] || keys['D'] || keys['ArrowRight']) player.vx = player.speed;
+    if ((keys[' '] || keys['Space']) && player.onGround) { player.vy = player.jumpPower; player.onGround = false; }
+
+    player.vy += GRAVITY;
+    let newX = player.x + player.vx;
+    let newY = player.y + player.vy;
+    player.onGround = false;
+
+    // 平滑移动
+    if (!checkCollision(newX, player.y, player.w, player.h)) {
+        player.x = newX;
+    }
+    
+    if(player.x < WORLD_LEFT_BOUND) player.x = WORLD_LEFT_BOUND;
+    if(player.x + player.w > WORLD_RIGHT_BOUND) player.x = WORLD_RIGHT_BOUND - player.w;
+
+    if (!checkCollision(player.x, newY, player.w, player.h)) {
+        player.y = newY;
+    } else {
+        if (player.vy > 0) player.onGround = true;
+        player.vy = 0;
+    }
+
+    if (Math.abs(player.vx) > 0) {
+        player.animTimer += deltaTime;
+        if (player.animTimer > 100) { player.animFrame = (player.animFrame + 1) % 4; player.animTimer = 0; }
+    } else player.animFrame = 0;
+
+    if (player.attackCooldown > 0) player.attackCooldown -= deltaTime;
+
+    // 饥饿系统（4秒1格）
+    if (!player.lastHungerDrop) player.lastHungerDrop = currentTime;
+    if (player.hunger > 0 && currentTime - player.lastHungerDrop >= 4000) {
+        player.hunger = Math.max(0, player.hunger - 1);
+        player.lastHungerDrop = currentTime;
+        updateStatusUI();
+    }
+
+    // 生命恢复
+    if (currentDifficulty.regenInterval > 0 && currentTime - player.lastHealthRegen >= currentDifficulty.regenInterval) {
+        if (player.health < 10) {
+            player.health = Math.min(10, player.health + currentDifficulty.regenAmount);
+            updateStatusUI();
+        }
+        player.lastHealthRegen = currentTime;
+    }
+
+    if (player.hunger <= 0) triggerGameOver(LANG[currentLang].youStarved);
+    if (player.y > WORLD_HEIGHT * BLOCK_SIZE) triggerGameOver(LANG[currentLang].youFell);
+
+    camera.x = player.x - canvas.width / 2 + player.w / 2;
+    camera.y = player.y - canvas.height / 2 + player.h / 2;
+
+    if (damageCooldown > 0) damageCooldown -= deltaTime;
+}
+
+// ========== 渲染 ==========
+function drawSteve(x, y) {
+    const s = BLOCK_SIZE / 16;
+    const isLeft = player.vx < 0;
+    ctx.save();
+    if (isLeft) { ctx.scale(-1, 1); x = -x - player.w; }
+    ctx.fillStyle = '#5D3A1A'; ctx.fillRect(x, y, 16*s, 16*s);
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x+2*s, y+2*s, 12*s, 12*s);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x+4*s, y+6*s, 2*s, 2*s); ctx.fillRect(x+10*s, y+6*s, 2*s, 2*s);
+    ctx.fillStyle = '#0000FF'; ctx.fillRect(x+5*s, y+7*s, 1*s, 1*s); ctx.fillRect(x+11*s, y+7*s, 1*s, 1*s);
+    ctx.fillStyle = '#00AAAA'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    const off = [0, 3, 0, -3][player.animFrame] * s;
+    ctx.fillStyle = '#5500AA';
+    ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s + off);
+    ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s - off);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(x+4*s, y+40*s + off, 4*s, 4*s);
+    ctx.fillRect(x+8*s, y+40*s - off, 4*s, 4*s);
+    ctx.restore();
+}
+
+function drawZombie(x, y, w, h) {
+    const s = w / 16;
+    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y, 16*s, 16*s);
+    ctx.fillStyle = '#000000'; ctx.fillRect(x+3*s, y+6*s, 3*s, 3*s); ctx.fillRect(x+10*s, y+6*s, 3*s, 3*s);
+    ctx.fillStyle = '#00796B'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
+    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    ctx.fillStyle = '#1A237E'; ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s); ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s);
+}
+
+// ========== 鼠标交互 ==========
+function getBlockAtMouse() {
+    const rect = canvas.getBoundingClientRect();
+    const mx = mouse.x - rect.left;
+    const my = mouse.y - rect.top;
+    const wx = Math.floor((mx + camera.x) / BLOCK_SIZE);
+    const wy = Math.floor((my + camera.y) / BLOCK_SIZE);
+    return { x: wx, y: wy, block: world[wx]?.[wy] || null };
+}
+
+function getMobAtMouse() {
+    const rect = canvas.getBoundingClientRect();
+    const wx = mouse.x - rect.left + camera.x;
+    const wy = mouse.y - rect.top + camera.y;
+    for (let i = 0; i < mobs.length; i++) {
+        const m = mobs[i];
+        if (wx >= m.x && wx <= m.x + m.w && wy >= m.y && wy <= m.y + m.h) return { mob: m, index: i };
+    }
+    return null;
+}
+
+function placeBlockAtMouse() {
+    if (isGameOver || gameState !== 'playing') return;
+    const t = getBlockAtMouse();
+    if (!t.block || t.block.id !== BLOCK_TYPES.AIR.id) return;
+    const item = player.hotbar[player.selectedHotbar];
+    const bt = BLOCK_TYPES[item?.type];
+    if (!bt || !bt.solid || !item || item.count <= 0) return;
+    
+    world[t.x][t.y] = BLOCK_TYPES.PLACED;
+    item.count -= 1;
+    if (item.count <= 0) player.hotbar[player.selectedHotbar] = null;
+    updateHotbarUI();
+}
+
+function handleMouseInteraction() {
+    if (isGameOver || gameState !== 'playing') return;
+    if (mouse.button === 1) {
+        const tm = getMobAtMouse();
+        if (tm) {
+            const m = tm.mob;
+            const d = Math.hypot((m.x + m.w/2) - (player.x + player.w/2), (m.y + m.h/2) - (player.y + player.h/2));
+            if (d <= ATTACK_RANGE && player.attackCooldown <= 0) {
+                m.health -= 1;
+                player.attackCooldown = 300;
+                if (m.health <= 0) {
+                    droppedItems.push({ x: m.x, y: m.y, w: BLOCK_SIZE/2, h: BLOCK_SIZE/2, type: 'RAW_ZOMBIE_MEAT', lifeTime: ITEM_LIFETIME });
+                    mobs.splice(tm.index, 1);
+                }
+            }
+            mouse.button = 0;
+            return;
+        }
+        
+        const tb = getBlockAtMouse();
+        if (!tb.block || tb.block.id === BLOCK_TYPES.AIR.id) { mouse.button = 0; return; }
+        const d = Math.hypot((tb.x * BLOCK_SIZE + BLOCK_SIZE/2) - (player.x + player.w/2), (tb.y * BLOCK_SIZE + BLOCK_SIZE/2) - (player.y + player.h/2));
+        if (d > BLOCK_SIZE * 6) { mouse.button = 0; return; }
+
+        const dt = tb.block.drop;
+        if (dt) {
+            for (let i = 0; i < player.hotbar.length; i++) {
+                if (player.hotbar[i]?.type === dt && player.hotbar[i].count < 64) {
+                    player.hotbar[i].count += 1;
+                    updateHotbarUI();
+                    break;
+                } else if (!player.hotbar[i]) {
+                    player.hotbar[i] = { type: dt, count: 1 };
+                    updateHotbarUI();
+                    break;
+                }
+            }
+        }
+        // 方块永久消失
+        world[tb.x][tb.y] = BLOCK_TYPES.AIR;
+        mouse.button = 0;
+    }
+}
+
+// ========== 掉落物系统 ==========
+function updateDroppedItems(deltaTime) {
+    if (gameState !== 'playing') return;
+    for (let i = droppedItems.length - 1; i >= 0; i--) {
+        const item = droppedItems[i];
+        item.lifeTime -= deltaTime;
+        const d = Math.hypot((item.x + item.w/2) - (player.x + player.w/2), (item.y + item.h/2) - (player.y + player.h/2));
+        if (d < BLOCK_SIZE * 1.5) {
+            if (FOOD_TYPES[item.type]) {
+                player.hunger = Math.min(10, player.hunger + FOOD_TYPES[item.type].hungerRestore);
+                if (player.health < 10) player.health = Math.min(10, player.health + FOOD_TYPES[item.type].healthRestore);
+                updateStatusUI();
+            }
+            droppedItems.splice(i, 1);
+            continue;
+        }
+        if (item.lifeTime <= 0) droppedItems.splice(i, 1);
+    }
+}
+
+function renderDroppedItems() {
+    if (gameState !== 'playing') return;
+    for (const item of droppedItems) {
+        const sx = item.x - camera.x;
+        const sy = item.y - camera.y;
+        ctx.fillStyle = FOOD_TYPES[item.type]?.color || '#8B4513';
+        ctx.fillRect(sx, sy, item.w, item.h);
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(sx, sy, item.w, item.h);
+    }
+}
+
+// ========== UI更新 ==========
+function updateStatusUI() {
+    if (gameState !== 'playing') return;
+    let hh = '', hu = '';
+    for(let i=0;i<10;i++) hh += `<div class="heart ${i<player.health?'':'empty'}"></div>`;
+    for(let i=0;i<10;i++) hu += `<div class="hunger ${i<player.hunger?'':'empty'}"></div>`;
+    document.getElementById('healthContainer').innerHTML = hh;
+    document.getElementById('hungerContainer').innerHTML = hu;
+}
+
+function updateHotbarUI() {
+    if (gameState !== 'playing') return;
+    const slots = document.querySelectorAll('.hotbar-slot');
+    slots.forEach((slot, index) => {
+        const item = player.hotbar[index];
+        const countEl = slot.querySelector('.item-count');
+        const previewEl = slot.querySelector('.block-preview');
+        if (item) {
+            countEl.textContent = item.count;
+            previewEl.style.backgroundColor = BLOCK_TYPES[item.type]?.color || '#FFFFFF';
+        } else {
+            countEl.textContent = '';
+            previewEl.style.backgroundColor = 'transparent';
+        }
+    });
+}
+
+function selectHotbarSlot(index) {
+    if (gameState !== 'playing' || index < 0 || index >= 9) return;
+    player.selectedHotbar = index;
+    document.querySelectorAll('.hotbar-slot').forEach(slot => slot.classList.remove('selected'));
+    document.querySelector(`[data-slot="${index}"]`).classList.add('selected');
+}
+
+// ========== 🔴 核心修复：僵尸智能寻路，不卡方块 ==========
+function spawnZombie() {
+    const max = isNightTime() ? currentDifficulty.maxZombies * 2 : currentDifficulty.maxZombies;
+    if (mobs.length >= max) return;
+    const side = Math.random() > 0.5 ? 'left' : 'right';
+    const sx = side === 'left' ? player.x - 500 : player.x + 500;
+    mobs.push({
+        x: Math.max(WORLD_LEFT_BOUND, Math.min(WORLD_RIGHT_BOUND - BLOCK_SIZE, sx)),
+        y: 10 * BLOCK_SIZE, w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 1.8,
+        speed: 2.2, health: currentDifficulty.zombieHealth, vy: 0, onGround: false, lastJump: 0
+    });
+}
+
+function updateMobs(deltaTime) {
+    if (gameState !== 'playing') return;
+    for (let i = mobs.length - 1; i >= 0; i--) {
+        const mob = mobs[i];
+        
+        // 🔥 修复1：给新僵尸初始化跳跃时间，防止游戏报错崩溃
+        if (!mob.lastJump) mob.lastJump = 0;
+
+        // 朝向玩家移动
+        const dir = player.x < mob.x ? -1 : 1;
+        let nx = mob.x + dir * mob.speed;
+
+        // 重力+垂直移动
+        mob.vy += GRAVITY;
+        let ny = mob.y + mob.vy;
+        
+        // 🔥 修复2：先处理垂直碰撞（落地判定），这是能跳跃的关键
+        mob.onGround = false;
+        if (!checkCollision(mob.x, ny, mob.w, mob.h)) {
+            mob.y = ny;
+        } else {
+            if (mob.vy > 0) mob.onGround = true;
+            mob.vy = 0;
+        }
+
+        // 水平移动 + 被卡住时跳跃（不卡墙、能跳1格方块）
+        if (!checkCollision(nx, mob.y, mob.w, mob.h)) {
+            mob.x = nx;
+        } else {
+            // 🔥 修复3：落地+冷却好就跳，绝不卡死
+            if (mob.onGround && Date.now() - mob.lastJump > 600) {
+                mob.vy = -11; // 跳跃力度，刚好跳1格
+                mob.lastJump = Date.now();
+            }
+        }
+
+        // 攻击玩家（原版逻辑，不动）
+        const dx = Math.abs(mob.x - player.x);
+        const dy = Math.abs(mob.y - player.y);
+        if (dx < 24 && dy < 40 && damageCooldown <= 0) {
+    player.health--;
+    playHurtSound(); // 播放受伤声音
+    damageCooldown = 1000;
+    updateStatusUI();
+    // 修复死亡提示，不再显示Undefined
+    if (player.health <= 0) {
+        triggerGameOver(LANG[currentLang].killedByZombie);
+    }
+}
+        // 掉出地图删除僵尸（防止卡顿）
+        if (mob.y > 1000) mobs.splice(i, 1);
+    }
+}
+// ========== 胜利系统 ==========
+function updateVictoryTimer(deltaTime) {
+    if (gameState !== 'playing' || currentDifficulty.victoryTime === 0) return;
+    survivalTime += deltaTime;
+    const left = currentDifficulty.victoryTime - survivalTime;
+    const m = Math.floor(left / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    document.getElementById('victoryTimer').innerHTML = `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    
+    if (survivalTime >= currentDifficulty.victoryTime) {
+        triggerVictory();
+    }
+}
+
+// ========== 游戏结束/胜利 ==========
+function triggerGameOver(reason) {
+    if (isGameOver) return;
+    isGameOver = true;
+    gameState = 'gameover';
+    document.getElementById('overlayTitle').innerHTML = LANG[currentLang].gameOver;
+    document.getElementById('overlayTitle').style.color = '#ff0000';
+    document.getElementById('overlaySubtitle').innerHTML = reason;
+    document.getElementById('gameOverlay').style.display = 'flex';
+}
+
+function triggerVictory() {
+    if (isGameOver) return;
+    isGameOver = true;
+    gameState = 'victory';
+    document.getElementById('overlayTitle').innerHTML = LANG[currentLang].success;
+    document.getElementById('overlayTitle').style.color = '#4CAF50';
+    document.getElementById('overlaySubtitle').innerHTML = LANG[currentLang].youSurvived;
+    document.getElementById('gameOverlay').style.display = 'flex';
+}
+
+function respawnGame() {
+    window.speechSynthesis.cancel();
+    dayTime = 0;
+    survivalTime = 0;
+
+    document.getElementById('overlayTitle').style.color = '#ff0000';
+    gameState = 'playing';
+    generateNewWorld();
+    document.getElementById('statusBar').style.display = 'flex';
+    document.getElementById('hotbar').style.display = 'flex';
+    document.getElementById('crosshair').style.display = 'block';
+    document.getElementById('dayCounter').style.display = 'block';
+    document.getElementById('topRightUI').style.display = 'flex';
+}
+function backToDifficulty() {
+    gameState = 'difficulty';
+    isGameOver = false;
+
+    // 重置所有时间，彻底解决卡死
+    rulesCountdown = 10;
+    rulesCanStart = false;
+    dayTime = 0;
+    survivalTime = 0;
+
+    document.getElementById('gameOverlay').style.display = 'none';
+    document.getElementById('difficultyScreen').style.display = 'flex';
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('rulesScreen').style.display = 'none';
+    document.getElementById('statusBar').style.display = 'none';
+    document.getElementById('hotbar').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    
+    // 👇 关键：关闭残留的时间UI，保留语言&音量按钮
+    document.getElementById('dayCounter').style.display = 'none';
+    document.getElementById('victoryTimer').style.display = 'none';
+}
+
+function backToMainMenu() {
+    gameState = 'start';
+    isGameOver = false;
+
+    // 重置时间，防止卡死
+    rulesCountdown = 10;
+    rulesCanStart = false;
+    dayTime = 0;
+    survivalTime = 0;
+
+    document.getElementById('gameOverlay').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'flex';
+    document.getElementById('difficultyScreen').style.display = 'none';
+    document.getElementById('rulesScreen').style.display = 'none';
+    document.getElementById('statusBar').style.display = 'none';
+    document.getElementById('hotbar').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    
+    // 👇 只隐藏天数、胜利计时，保留语言&声音
+    document.getElementById('dayCounter').style.display = 'none';
+    document.getElementById('victoryTimer').style.display = 'none';
+}
+// ========== 世界渲染 ==========
+function renderWorld() {
+    if (gameState === 'start' || gameState === 'difficulty' || gameState === 'rules') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+    }
+    
+    ctx.fillStyle = getSkyColor();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    const sx = Math.floor(camera.x / BLOCK_SIZE) - 2;
+    const ex = Math.floor((camera.x + canvas.width) / BLOCK_SIZE) + 2;
+    const sy = Math.floor(camera.y / BLOCK_SIZE) - 2;
+    const ey = Math.floor((camera.y + canvas.height) / BLOCK_SIZE) + 2;
+    for (let x = sx; x <= ex; x++) {
+        for (let y = sy; y <= ey; y++) {
+            const b = world[x]?.[y];
+            if (!b || b.id === BLOCK_TYPES.AIR.id) continue;
+            const px = x * BLOCK_SIZE - camera.x;
+            const py = y * BLOCK_SIZE - camera.y;
+            ctx.fillStyle = b.color;
+            ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = '#00000020';
+            ctx.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+        }
+    }
+    renderDroppedItems();
+    for (const m of mobs) drawZombie(m.x - camera.x, m.y - camera.y, m.w, m.h);
+    drawSteve(player.x - camera.x, player.y - camera.y);
+}
+// ========== 规则倒计时 ==========
+let rulesSecondTimer = 0;
+function updateRulesCountdown(deltaTime) {
+    if (gameState !== 'rules' || rulesCanStart) return;
+    rulesSecondTimer += deltaTime;
+    if (rulesSecondTimer >= 1000) {
+        rulesSecondTimer -= 1000;
+        rulesCountdown--;
+    }
+    if (rulesCountdown <= 0) {
+        rulesCountdown = 0;
+        rulesCanStart = true;
+        document.getElementById('rulesCountdown').style.display = 'none';
+        document.getElementById('rulesStartPrompt').style.display = 'block';
+    } else {
+        document.getElementById('rulesCountdown').innerHTML = rulesCountdown;
+    }
+}
+// ========== UI文字更新 ==========
+function updateAllUIText() {
+    document.getElementById('startTitle').innerText = LANG[currentLang].startTitle;
+    document.getElementById('startSubtitle').innerText = LANG[currentLang].startSubtitle;
+    document.getElementById('startPrompt').innerText = LANG[currentLang].startPrompt;
+    document.getElementById('startInspired').innerText = LANG[currentLang].startInspired;
+    document.getElementById('exitBtnMenu').innerText = LANG[currentLang].exitBtnMenu;
+    document.getElementById('difficultyTitle').innerText = LANG[currentLang].difficultyTitle;
+    document.getElementById('easyBtn').innerText = LANG[currentLang].easy;
+    document.getElementById('normalBtn').innerText = LANG[currentLang].normal;
+    document.getElementById('hardBtn').innerText = LANG[currentLang].hard;
+    document.getElementById('extremeBtn').innerText = LANG[currentLang].extreme;
+    document.getElementById('infinityBtn').innerText = LANG[currentLang].infinity;
+    document.getElementById('rulesTitle').innerText = LANG[currentLang].rulesTitle;
+    document.getElementById('rulesContent').innerHTML = LANG[currentLang].rulesContent;
+    document.getElementById('rulesStartPrompt').innerText = LANG[currentLang].rulesStartPrompt;
+    document.getElementById('overlayHint').innerText = LANG[currentLang].controlHint;
+    document.getElementById('langToggle').innerText = currentLang === 'en' ? 'EN' : '中';
+    document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
+}
+
+// ========== 难度按钮 ==========
+function setupDifficultyButtons() {
+    document.getElementById('easyBtn').onclick = () => { currentDifficulty = DIFFICULTY.EASY; toRulesScreen(); };
+    document.getElementById('normalBtn').onclick = () => { currentDifficulty = DIFFICULTY.NORMAL; toRulesScreen(); };
+    document.getElementById('hardBtn').onclick = () => { currentDifficulty = DIFFICULTY.HARD; toRulesScreen(); };
+    document.getElementById('extremeBtn').onclick = () => { currentDifficulty = DIFFICULTY.EXTREME; toRulesScreen(); };
+    document.getElementById('infinityBtn').onclick = () => { currentDifficulty = DIFFICULTY.INFINITY; toRulesScreen(); };
+}
+
+function toRulesScreen() {
+    gameState = 'rules';
+    rulesCountdown = 10;
+    rulesCanStart = false;
+    document.getElementById('difficultyScreen').style.display = 'none';
+    document.getElementById('rulesScreen').style.display = 'flex';
+    document.getElementById('rulesCountdown').style.display = 'block';
+    document.getElementById('rulesStartPrompt').style.display = 'none';
+}
+
+function startGame() {
+    if (!rulesCanStart) return;
+    gameState = 'playing';
+    document.getElementById('rulesScreen').style.display = 'none';
+    document.getElementById('statusBar').style.display = 'flex';
+    document.getElementById('hotbar').style.display = 'flex';
+    document.getElementById('crosshair').style.display = 'block';
+    document.getElementById('dayCounter').style.display = 'block';
+    document.getElementById('topRightUI').style.display = 'flex';
+    document.getElementById('victoryTimer').style.display = currentDifficulty.victoryTime > 0 ? 'block' : 'none';
+    generateNewWorld();
+}
+
+// ========== 主游戏循环 ==========
+function gameLoop(timestamp) {
+    const deltaTime = timestamp - lastTimestamp || 0;
+    lastTimestamp = timestamp;
+    
+    // 🔴 修复：把所有时间相关更新放在最前面，确保每一帧都执行
+    updateRulesCountdown(deltaTime);
+    updateDayNightCycle(deltaTime);
+    updateVictoryTimer(deltaTime);
+    
+    updatePlayer(deltaTime, timestamp);
+    handleMouseInteraction();
+    updateDroppedItems(deltaTime);
+    updateMobs(deltaTime);
+    
+    // 僵尸生成
+    const spawnInterval = isNightTime() ? 2000 : 4000;
+    if (Date.now() - lastZombieSpawnTime > spawnInterval) {
+        spawnZombie();
+        if (isNightTime() && Math.random() < 0.5) spawnZombie();
+        lastZombieSpawnTime = Date.now();
+    }
+    
+    renderWorld();
+    requestAnimationFrame(gameLoop);
+}
+// ========== 事件监听 ==========
+window.addEventListener('keydown', (e) => {
+    if (gameState === 'start' && (e.key === 'e' || e.key === 'E')) {
+        gameState = 'difficulty';
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('difficultyScreen').style.display = 'flex';
+        return;
+    }
+    if (gameState === 'rules' && rulesCanStart) { startGame(); return; }
+    if (gameState === 'playing') {
+        keys[e.key] = true;
+        if (e.key >= '1' && e.key <= '9') selectHotbarSlot(parseInt(e.key) - 1);
+        if (e.key === 'r' || e.key === 'R') respawnGame();
+        if (e.key === 't' || e.key === 'T') placeBlockAtMouse();
+    }
+    if ((gameState === 'gameover' || gameState === 'victory') && e.key === 'r') respawnGame();
+    if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 'h' || e.key === 'H')) backToDifficulty();
+    if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 't' || e.key === 'T')) backToMainMenu();
+});
+
+window.addEventListener('keyup', (e) => { if (gameState === 'playing') keys[e.key] = false; });
+
+window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    document.getElementById('crosshair').style.left = `${e.clientX}px`;
+    document.getElementById('crosshair').style.top = `${e.clientY}px`;
+});
+
+window.addEventListener('mousedown', (e) => {
+    if (gameState === 'rules' && rulesCanStart) { startGame(); return; }
+    if (gameState === 'playing') mouse.button = e.which;
+});
+
+window.addEventListener('mouseup', () => { if (gameState === 'playing') mouse.button = 0; });
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (gameState === 'playing') { camera.x = player.x - canvas.width / 2 + player.w / 2; camera.y = player.y - canvas.height / 2 + player.h / 2; }
+});
+
+document.querySelectorAll('.hotbar-slot').forEach(slot => {
+    slot.onclick = () => selectHotbarSlot(parseInt(slot.dataset.slot));
+});
+
+document.getElementById('exitBtnMenu').onclick = () => { window.close(); };
+
+document.getElementById('langToggle').onclick = () => {
+    currentLang = currentLang === 'en' ? 'zh' : 'en';
+    updateAllUIText();
+};
+
+document.getElementById('soundToggle').onclick = () => {
+    soundMuted = !soundMuted;
+    document.getElementById('soundToggle').innerHTML = soundMuted ? '🔇' : '🔊';
+};
+
+// ========== 初始化 ==========
+initWorldArray();
+setupDifficultyButtons();
+updateAllUIText();
+requestAnimationFrame(gameLoop);
+// 受伤声音（100%生效，跟随静音开关）
+function playHurtSound() {
+    if (soundMuted) return;
+    // 英文/中文 简短叫声
+    const text = currentLang === 'en' ? 'ow' : '啊';
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.volume = 1;
+    utter.rate = 1.2;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+}
+</script>
+</body>
+</html>
