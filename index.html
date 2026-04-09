@@ -80,6 +80,13 @@ canvas { display: block; }
 #overlayTitle { font-size: 72px; font-weight: bold; margin-bottom: 20px; text-shadow: 4px 4px #000; }
 #overlaySubtitle { font-size: 24px; color: #fff; margin-bottom: 40px; }
 #overlayHint { font-size: 22px; color: #ccc; line-height: 1.6; }
+
+/* 新增：剧情/彩蛋提示框 */
+#storyPopup {
+    position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); padding: 15px 30px; border-radius: 10px;
+    color: #fff; font-size: 20px; z-index: 200; display: none; border: 2px solid #4CAF50;
+}
 </style>
 </head>
 <body>
@@ -154,6 +161,9 @@ canvas { display: block; }
     <div id="overlayHint">Press R to Respawn | Press H to Difficulties | Press T to Main Menu</div>
 </div>
 
+<!-- 新增：剧情/彩蛋提示框 -->
+<div id="storyPopup"></div>
+
 <script>
 // ========== 100% 隔离的双语系统 ==========
 const LANG = {
@@ -207,9 +217,9 @@ const BLOCK_SIZE = 48;
 const WORLD_HEIGHT = 64;
 const DAY_LENGTH = 85000;
 const DAY_TIME = 45000;
-const DUSK_DURATION = 4000;   // 黄昏渐变4秒
-const DAWN_DURATION = 4000;    // 黎明渐变4秒
-const NIGHT_TIME = 32000;      // 纯夜晚32秒
+const DUSK_DURATION = 4000;
+const DAWN_DURATION = 4000;
+const NIGHT_TIME = 32000;
 const GRAVITY = 0.5;
 const WORLD_SEED = 54321;
 const ATTACK_RANGE = BLOCK_SIZE * 3.5;
@@ -248,7 +258,9 @@ const player = {
         { type: 'GRASS', count: 64 }, { type: 'DIRT', count: 64 }, { type: 'WOOD', count: 1 },
         null, null, null, null, null, null
     ],
-    selectedHotbar: 0, animFrame: 0, animTimer: 0, attackCooldown: 0
+    selectedHotbar: 0, animFrame: 0, animTimer: 0, attackCooldown: 0,
+    lastGroundY: 10 * BLOCK_SIZE, // 新增：记录上一次地面高度用于掉落伤害
+    name: "Bob" // 新增：玩家名字
 };
 
 const camera = { x: 0, y: 0 };
@@ -263,6 +275,15 @@ const mouse = { x: 0, y: 0, button: 0 };
 let lastTimestamp = 0;
 let lastZombieSpawnTime = 0;
 let survivalTime = 0;
+
+// ========== 新增：剧情/彩蛋系统 ==========
+let storyShown = { welcome: false, firstNight: false, day3Easter: false };
+function showStoryPopup(text, duration = 3000) {
+    const popup = document.getElementById('storyPopup');
+    popup.innerText = text;
+    popup.style.display = 'block';
+    setTimeout(() => { popup.style.display = 'none'; }, duration);
+}
 
 // ========== 核心：地形生成（不刷新已破坏方块） ==========
 function noise2D(x,y,seed) { const n = Math.sin(x*12.9898 + y*78.233 + seed)*43758.5453; return n - Math.floor(n); }
@@ -298,6 +319,9 @@ function generateNewWorld() {
     
     mobs = []; droppedItems = []; dayTime = 0; currentDay = 1; survivalTime = 0;
     isGameOver = false; player.lastHungerDrop = 0; player.lastHealthRegen = 0; lastZombieSpawnTime = 0;
+    player.lastGroundY = 10 * BLOCK_SIZE; // 重置掉落高度记录
+    storyShown = { welcome: false, firstNight: false, day3Easter: false }; // 重置剧情
+    
     document.getElementById('gameOverlay').style.display = 'none';
     document.getElementById('victoryTimer').style.display = (currentDifficulty.victoryTime > 0) ? 'block' : 'none';
     
@@ -332,10 +356,29 @@ function checkCollision(x, y, w, h) {
 function updateDayNightCycle(deltaTime) {
     if (gameState !== 'playing') return;
     dayTime += deltaTime;
+    
+    // 新增：欢迎剧情
+    if (!storyShown.welcome && survivalTime > 1000) {
+        storyShown.welcome = true;
+        showStoryPopup(`Welcome, ${player.name}! Survive the night...`, 4000);
+    }
+    
+    // 新增：第一夜剧情
+    if (!storyShown.firstNight && currentDay === 1 && dayTime > DAY_TIME) {
+        storyShown.firstNight = true;
+        showStoryPopup("Night falls! The Undead Crews are coming...", 3000);
+    }
+    
     if (dayTime >= DAY_LENGTH) {
         dayTime -= DAY_LENGTH;
         currentDay++;
         document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
+        
+        // 新增：第3天彩蛋提示
+        if (currentDay === 3 && !storyShown.day3Easter) {
+            storyShown.day3Easter = true;
+            showStoryPopup("Something special happens tonight...", 3000);
+        }
     }
 }
 
@@ -343,12 +386,10 @@ function getSkyColor() {
   const duskEnd = DAY_TIME + DUSK_DURATION;
   const dawnStart = duskEnd + NIGHT_TIME;
 
-  // 1. 纯白天：0~45秒 → 亮蓝色
   if (dayTime <= DAY_TIME) {
     return 'rgb(135, 206, 235)';
   }
 
-  // 2. 黄昏渐变：45~49秒 → 蓝天→橙夕阳→深蓝夜（4秒平滑）
   if (dayTime <= duskEnd) {
     const prog = (dayTime - DAY_TIME) / DUSK_DURATION;
     const r = Math.floor(135 + (255-135)*prog);
@@ -357,12 +398,10 @@ function getSkyColor() {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  // 3. 纯夜晚：49~81秒 → 深黑夜色
   if (dayTime <= dawnStart) {
     return 'rgb(18, 18, 40)';
   }
 
-  // 4. 黎明渐变：81秒最后4秒 → 黑夜→蓝天（4秒平滑）
   const prog = (dayTime - dawnStart) / DAWN_DURATION;
   const r = Math.floor(18 + (135-18)*prog);
   const g = Math.floor(18 + (206-18)*prog);
@@ -374,7 +413,8 @@ function isNightTime() {
   const dawnStart = duskEnd + NIGHT_TIME;
   return dayTime > DAY_TIME && dayTime < dawnStart;
 }
-// ========== 玩家更新 ==========
+
+// ========== 玩家更新（新增掉落伤害） ==========
 function updatePlayer(deltaTime, currentTime) {
     if (isGameOver || gameState !== 'playing') return;
 
@@ -388,7 +428,6 @@ function updatePlayer(deltaTime, currentTime) {
     let newY = player.y + player.vy;
     player.onGround = false;
 
-    // 平滑移动
     if (!checkCollision(newX, player.y, player.w, player.h)) {
         player.x = newX;
     }
@@ -399,7 +438,18 @@ function updatePlayer(deltaTime, currentTime) {
     if (!checkCollision(player.x, newY, player.w, player.h)) {
         player.y = newY;
     } else {
-        if (player.vy > 0) player.onGround = true;
+        if (player.vy > 0) {
+            player.onGround = true;
+            // 新增：掉落伤害计算
+            const fallHeight = (player.y - player.lastGroundY) / BLOCK_SIZE;
+            if (fallHeight >= 5) {
+                const damage = Math.floor(fallHeight / 5);
+                player.health = Math.max(0, player.health - damage);
+                updateStatusUI();
+                if (player.health <= 0) triggerGameOver(LANG[currentLang].youFell);
+            }
+            player.lastGroundY = player.y;
+        }
         player.vy = 0;
     }
 
@@ -410,7 +460,6 @@ function updatePlayer(deltaTime, currentTime) {
 
     if (player.attackCooldown > 0) player.attackCooldown -= deltaTime;
 
-    // 饥饿系统（4秒1格）
     if (!player.lastHungerDrop) player.lastHungerDrop = currentTime;
     if (player.hunger > 0 && currentTime - player.lastHungerDrop >= 4000) {
         player.hunger = Math.max(0, player.hunger - 1);
@@ -418,7 +467,6 @@ function updatePlayer(deltaTime, currentTime) {
         updateStatusUI();
     }
 
-    // 生命恢复
     if (currentDifficulty.regenInterval > 0 && currentTime - player.lastHealthRegen >= currentDifficulty.regenInterval) {
         if (player.health < 10) {
             player.health = Math.min(10, player.health + currentDifficulty.regenAmount);
@@ -436,20 +484,20 @@ function updatePlayer(deltaTime, currentTime) {
     if (damageCooldown > 0) damageCooldown -= deltaTime;
 }
 
-// ========== 渲染 ==========
+// ========== 渲染（修改：Bob绿眼睛+紫衣服，Undead Crews蓝眼睛+红衣服） ==========
 function drawSteve(x, y) {
     const s = BLOCK_SIZE / 16;
     const isLeft = player.vx < 0;
     ctx.save();
     if (isLeft) { ctx.scale(-1, 1); x = -x - player.w; }
     ctx.fillStyle = '#5D3A1A'; ctx.fillRect(x, y, 16*s, 16*s);
-    ctx.fillStyle = '#F5C096'; ctx.fillRect(x+2*s, y+2*s, 12*s, 12*s);
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x+2*s, y+2*s, 12*s, 12*s); // 恢复原皮肤色
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x+4*s, y+6*s, 2*s, 2*s); ctx.fillRect(x+10*s, y+6*s, 2*s, 2*s);
-    ctx.fillStyle = '#0000FF'; ctx.fillRect(x+5*s, y+7*s, 1*s, 1*s); ctx.fillRect(x+11*s, y+7*s, 1*s, 1*s);
-    ctx.fillStyle = '#00AAAA'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
-    ctx.fillStyle = '#F5C096'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    ctx.fillStyle = '#32CD32'; ctx.fillRect(x+5*s, y+7*s, 1*s, 1*s); ctx.fillRect(x+11*s, y+7*s, 1*s, 1*s); // 绿色眼睛
+    ctx.fillStyle = '#5500AA'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s); // 紫色衣服
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s); // 恢复原手臂色
     const off = [0, 3, 0, -3][player.animFrame] * s;
-    ctx.fillStyle = '#5500AA';
+    ctx.fillStyle = '#1A237E';
     ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s + off);
     ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s - off);
     ctx.fillStyle = '#333333';
@@ -458,12 +506,19 @@ function drawSteve(x, y) {
     ctx.restore();
 }
 
-function drawZombie(x, y, w, h) {
+// 僵尸：Undead Crews，蓝眼睛+红衣服
+function drawZombie(x, y, w, h, mob) {
     const s = w / 16;
-    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y, 16*s, 16*s);
-    ctx.fillStyle = '#000000'; ctx.fillRect(x+3*s, y+6*s, 3*s, 3*s); ctx.fillRect(x+10*s, y+6*s, 3*s, 3*s);
-    ctx.fillStyle = '#00796B'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
-    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    // 彩蛋：第3天夜晚的特殊僵尸是金色的
+    const isSpecial = mob && mob.isSpecial;
+    const headColor = isSpecial ? '#FFD700' : '#2E7D32';
+    const shirtColor = isSpecial ? '#FFD700' : '#FF0000'; // 红色衣服
+    const eyeColor = isSpecial ? '#FF0000' : '#0000FF'; // 蓝色眼睛
+    
+    ctx.fillStyle = headColor; ctx.fillRect(x, y, 16*s, 16*s);
+    ctx.fillStyle = eyeColor; ctx.fillRect(x+3*s, y+6*s, 3*s, 3*s); ctx.fillRect(x+10*s, y+6*s, 3*s, 3*s);
+    ctx.fillStyle = shirtColor; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
+    ctx.fillStyle = headColor; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
     ctx.fillStyle = '#1A237E'; ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s); ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s);
 }
 
@@ -513,7 +568,19 @@ function handleMouseInteraction() {
                 m.health -= 1;
                 player.attackCooldown = 300;
                 if (m.health <= 0) {
-                    droppedItems.push({ x: m.x, y: m.y, w: BLOCK_SIZE/2, h: BLOCK_SIZE/2, type: 'RAW_ZOMBIE_MEAT', lifeTime: ITEM_LIFETIME });
+                    // 彩蛋：特殊僵尸掉落双倍肉
+                    const meatCount = m.isSpecial ? 2 : 1;
+                    for(let i=0; i<meatCount; i++) {
+                        droppedItems.push({ 
+                            x: m.x + Math.random()*20, 
+                            y: m.y, 
+                            w: BLOCK_SIZE/2, 
+                            h: BLOCK_SIZE/2, 
+                            type: 'RAW_ZOMBIE_MEAT', 
+                            lifeTime: ITEM_LIFETIME 
+                        });
+                    }
+                    if(m.isSpecial) showStoryPopup("You defeated the special Undead Crew! Double loot!", 2000);
                     mobs.splice(tm.index, 1);
                 }
             }
@@ -540,7 +607,6 @@ function handleMouseInteraction() {
                 }
             }
         }
-        // 方块永久消失
         world[tb.x][tb.y] = BLOCK_TYPES.AIR;
         mouse.button = 0;
     }
@@ -612,36 +678,42 @@ function selectHotbarSlot(index) {
     document.querySelector(`[data-slot="${index}"]`).classList.add('selected');
 }
 
-// ========== 🔴 核心修复：僵尸智能寻路，不卡方块 ==========
+// ========== 优化：僵尸生成（含第3天特殊彩蛋） ==========
 function spawnZombie() {
     const max = isNightTime() ? currentDifficulty.maxZombies * 2 : currentDifficulty.maxZombies;
     if (mobs.length >= max) return;
     const side = Math.random() > 0.5 ? 'left' : 'right';
     const sx = side === 'left' ? player.x - 500 : player.x + 500;
+    
+    // 彩蛋：第3天夜晚20%概率生成特殊僵尸
+    const isSpecial = currentDay === 3 && isNightTime() && Math.random() < 0.2;
+    
     mobs.push({
         x: Math.max(WORLD_LEFT_BOUND, Math.min(WORLD_RIGHT_BOUND - BLOCK_SIZE, sx)),
         y: 10 * BLOCK_SIZE, w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 1.8,
-        speed: 2.2, health: currentDifficulty.zombieHealth, vy: 0, onGround: false, lastJump: 0
+        speed: 2.2, health: isSpecial ? currentDifficulty.zombieHealth * 2 : currentDifficulty.zombieHealth, 
+        vy: 0, onGround: false, lastJump: 0,
+        lastAttackTime: 0, // 新增：每个僵尸独立攻击冷却
+        isSpecial: isSpecial, // 彩蛋标记
+        name: isSpecial ? "Golden Undead Crew" : "Undead Crews"
     });
 }
 
+// ========== 优化：僵尸AI（不卡+群殴伤害） ==========
 function updateMobs(deltaTime) {
     if (gameState !== 'playing') return;
     for (let i = mobs.length - 1; i >= 0; i--) {
         const mob = mobs[i];
         
-        // 🔥 修复1：给新僵尸初始化跳跃时间，防止游戏报错崩溃
         if (!mob.lastJump) mob.lastJump = 0;
+        if (!mob.lastAttackTime) mob.lastAttackTime = 0;
 
-        // 朝向玩家移动
         const dir = player.x < mob.x ? -1 : 1;
         let nx = mob.x + dir * mob.speed;
 
-        // 重力+垂直移动
         mob.vy += GRAVITY;
         let ny = mob.y + mob.vy;
         
-        // 🔥 修复2：先处理垂直碰撞（落地判定），这是能跳跃的关键
         mob.onGround = false;
         if (!checkCollision(mob.x, ny, mob.w, mob.h)) {
             mob.y = ny;
@@ -650,34 +722,33 @@ function updateMobs(deltaTime) {
             mob.vy = 0;
         }
 
-        // 水平移动 + 被卡住时跳跃（不卡墙、能跳1格方块）
         if (!checkCollision(nx, mob.y, mob.w, mob.h)) {
             mob.x = nx;
         } else {
-            // 🔥 修复3：落地+冷却好就跳，绝不卡死
             if (mob.onGround && Date.now() - mob.lastJump > 600) {
-                mob.vy = -11; // 跳跃力度，刚好跳1格
+                mob.vy = -11;
                 mob.lastJump = Date.now();
             }
         }
 
-        // 攻击玩家（原版逻辑，不动）
+        // 优化：每个僵尸独立攻击冷却，实现群殴效果
         const dx = Math.abs(mob.x - player.x);
         const dy = Math.abs(mob.y - player.y);
-        if (dx < 24 && dy < 40 && damageCooldown <= 0) {
-    player.health--;
-    playHurtSound(); // 播放受伤声音
-    damageCooldown = 1000;
-    updateStatusUI();
-    // 修复死亡提示，不再显示Undefined
-    if (player.health <= 0) {
-        triggerGameOver(LANG[currentLang].killedByZombie);
-    }
-}
-        // 掉出地图删除僵尸（防止卡顿）
+        const now = Date.now();
+        if (dx < 24 && dy < 40 && now - mob.lastAttackTime > 800) { // 每个僵尸攻击间隔800ms
+            player.health--;
+            playHurtSound();
+            mob.lastAttackTime = now;
+            updateStatusUI();
+            if (player.health <= 0) {
+                triggerGameOver(LANG[currentLang].killedByZombie);
+            }
+        }
+        
         if (mob.y > 1000) mobs.splice(i, 1);
     }
 }
+
 // ========== 胜利系统 ==========
 function updateVictoryTimer(deltaTime) {
     if (gameState !== 'playing' || currentDifficulty.victoryTime === 0) return;
@@ -731,7 +802,6 @@ function backToDifficulty() {
     gameState = 'difficulty';
     isGameOver = false;
 
-    // 重置所有时间，彻底解决卡死
     rulesCountdown = 10;
     rulesCanStart = false;
     dayTime = 0;
@@ -745,7 +815,6 @@ function backToDifficulty() {
     document.getElementById('hotbar').style.display = 'none';
     document.getElementById('crosshair').style.display = 'none';
     
-    // 👇 关键：关闭残留的时间UI，保留语言&音量按钮
     document.getElementById('dayCounter').style.display = 'none';
     document.getElementById('victoryTimer').style.display = 'none';
 }
@@ -754,7 +823,6 @@ function backToMainMenu() {
     gameState = 'start';
     isGameOver = false;
 
-    // 重置时间，防止卡死
     rulesCountdown = 10;
     rulesCanStart = false;
     dayTime = 0;
@@ -768,11 +836,11 @@ function backToMainMenu() {
     document.getElementById('hotbar').style.display = 'none';
     document.getElementById('crosshair').style.display = 'none';
     
-    // 👇 只隐藏天数、胜利计时，保留语言&声音
     document.getElementById('dayCounter').style.display = 'none';
     document.getElementById('victoryTimer').style.display = 'none';
 }
-// ========== 世界渲染 ==========
+
+// ========== 世界渲染（新增：简单光影/阴影） ==========
 function renderWorld() {
     if (gameState === 'start' || gameState === 'difficulty' || gameState === 'rules') {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -794,14 +862,18 @@ function renderWorld() {
             const py = y * BLOCK_SIZE - camera.y;
             ctx.fillStyle = b.color;
             ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+            // 新增：简单阴影效果
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(px + 2, py + 2, BLOCK_SIZE, BLOCK_SIZE);
             ctx.strokeStyle = '#00000020';
             ctx.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
         }
     }
     renderDroppedItems();
-    for (const m of mobs) drawZombie(m.x - camera.x, m.y - camera.y, m.w, m.h);
+    for (const m of mobs) drawZombie(m.x - camera.x, m.y - camera.y, m.w, m.h, m);
     drawSteve(player.x - camera.x, player.y - camera.y);
 }
+
 // ========== 规则倒计时 ==========
 let rulesSecondTimer = 0;
 function updateRulesCountdown(deltaTime) {
@@ -820,6 +892,7 @@ function updateRulesCountdown(deltaTime) {
         document.getElementById('rulesCountdown').innerHTML = rulesCountdown;
     }
 }
+
 // ========== UI文字更新 ==========
 function updateAllUIText() {
     document.getElementById('startTitle').innerText = LANG[currentLang].startTitle;
@@ -878,7 +951,6 @@ function gameLoop(timestamp) {
     const deltaTime = timestamp - lastTimestamp || 0;
     lastTimestamp = timestamp;
     
-    // 🔴 修复：把所有时间相关更新放在最前面，确保每一帧都执行
     updateRulesCountdown(deltaTime);
     updateDayNightCycle(deltaTime);
     updateVictoryTimer(deltaTime);
@@ -888,7 +960,6 @@ function gameLoop(timestamp) {
     updateDroppedItems(deltaTime);
     updateMobs(deltaTime);
     
-    // 僵尸生成
     const spawnInterval = isNightTime() ? 2000 : 4000;
     if (Date.now() - lastZombieSpawnTime > spawnInterval) {
         spawnZombie();
@@ -899,7 +970,8 @@ function gameLoop(timestamp) {
     renderWorld();
     requestAnimationFrame(gameLoop);
 }
-// ========== 事件监听 ==========
+
+// ========== 事件监听（修复：游戏中按R不重启） ==========
 window.addEventListener('keydown', (e) => {
     if (gameState === 'start' && (e.key === 'e' || e.key === 'E')) {
         gameState = 'difficulty';
@@ -911,9 +983,10 @@ window.addEventListener('keydown', (e) => {
     if (gameState === 'playing') {
         keys[e.key] = true;
         if (e.key >= '1' && e.key <= '9') selectHotbarSlot(parseInt(e.key) - 1);
-        if (e.key === 'r' || e.key === 'R') respawnGame();
+        // 修复：移除游戏中按R重启
         if (e.key === 't' || e.key === 'T') placeBlockAtMouse();
     }
+    // 仅在gameover或victory时响应R/H/T
     if ((gameState === 'gameover' || gameState === 'victory') && e.key === 'r') respawnGame();
     if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 'h' || e.key === 'H')) backToDifficulty();
     if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 't' || e.key === 'T')) backToMainMenu();
@@ -963,10 +1036,9 @@ initWorldArray();
 setupDifficultyButtons();
 updateAllUIText();
 requestAnimationFrame(gameLoop);
-// 受伤声音（100%生效，跟随静音开关）
+
 function playHurtSound() {
     if (soundMuted) return;
-    // 英文/中文 简短叫声
     const text = currentLang === 'en' ? 'ow' : '啊';
     const utter = new SpeechSynthesisUtterance(text);
     utter.volume = 1;
