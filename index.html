@@ -7,9 +7,9 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { overflow: hidden; font-family: 'Courier New', monospace; user-select: none; }
-canvas { display: block; }
+canvas { display: block; cursor: none; }
 
-#startScreen, #difficultyScreen, #rulesScreen, #gameOverlay {
+#startScreen, #difficultyScreen, #gameOverlay, #dialogueBox, #backpackUI {
     position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: #1a1a1a; display: none; flex-direction: column;
     align-items: center; justify-content: center; z-index: 100; color: #fff;
@@ -25,23 +25,16 @@ canvas { display: block; }
 #difficultyTitle { font-size: 72px; font-weight: bold; text-shadow: 3px 3px #000; margin-bottom: 60px; color: #FFD700; }
 .difficulty-btn { width: 420px; padding: 20px; margin: 15px; font-size: 28px; font-weight: bold; border: 4px solid #000; cursor: pointer; transition: all 0.2s; }
 .difficulty-btn:hover { transform: scale(1.05); }
-#easyBtn { background-color: #4CAF50; color: #fff; }
 #normalBtn { background-color: #FFC107; color: #000; }
 #hardBtn { background-color: #FF5722; color: #fff; }
-#extremeBtn { background-color: #9C27B0; color: #fff; }
 #infinityBtn { background-color: #607D8B; color: #fff; }
-
-#rulesTitle { font-size: 64px; font-weight: bold; text-shadow: 3px 3px #000; margin-bottom: 40px; color: #2196F3; }
-#rulesContent { max-width: 950px; font-size: 19px; line-height: 1.8; text-align: left; background-color: rgba(0,0,0,0.5); padding: 30px; border: 3px solid #444; margin-bottom: 30px; }
-#rulesCountdown { position: absolute; bottom: 30px; right: 30px; font-size: 48px; font-weight: bold; color: #FF0000; text-shadow: 2px 2px #000; }
-#rulesStartPrompt { font-size: 32px; color: #4CAF50; text-shadow: 2px 2px #000; display: none; }
 
 #statusBar { position: absolute; top: 20px; left: 20px; display: none; flex-direction: column; gap: 12px; z-index: 5; }
 .health-group, .hunger-group { display: flex; gap: 4px; }
 .heart, .hunger { width: 32px; height: 32px; background-size: cover; }
 .heart { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23FF0000" d="M16 28l-1.4-1.3C6.4 20.4 2 16.3 2 11.5 2 7.9 4.9 5 8.5 5c2.2 0 4.2 1.1 5.3 2.8C14.9 6.1 16.9 5 19.1 5c3.6 0 6.5 2.9 6.5 6.5 0 4.8-4.4 8.9-12.6 15.2L16 28z"/></svg>'); }
 .heart.empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23808080" d="M16 28l-1.4-1.3C6.4 20.4 2 16.3 2 11.5 2 7.9 4.9 5 8.5 5c2.2 0 4.2 1.1 5.3 2.8C14.9 6.1 16.9 5 19.1 5c3.6 0 6.5 2.9 6.5 6.5 0 4.8-4.4 8.9-12.6 15.2L16 28z"/></svg>'); }
-.hunger { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23FFA500" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 24c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm-2-14h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>'); }
+.hunger { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23FFA500" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 24c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm-2-14h4 v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>'); }
 .hunger.empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="%23808080" d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 24c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10zm-2-14h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>'); }
 
 #dayCounter { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); padding: 6px 16px; border-radius: 20px; font-size: 22px; font-weight: bold; color: #ffffbb; text-shadow: 1px 1px #000; z-index: 5; display: none; }
@@ -54,18 +47,12 @@ canvas { display: block; }
     align-items: center;
     z-index: 100;
 }
-#victoryTimer { background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px #000; display: none; }
+#recordDisplay { background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px #000; display: none; }
 #langToggle, #soundToggle { font-size: 24px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 40px; cursor: pointer; color: white; font-weight: bold; user-select: none; }
 #soundToggle { font-size: 32px; }
+#buffUI { background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 18px; color: #d4af37; text-shadow: 1px 1px #000; display: none; }
 
-#hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 4px; background-color: rgba(0,0,0,0.7); padding: 8px; border: 4px solid #000; z-index: 5; }
-.hotbar-slot { width: 48px; height: 48px; background-color: #333; border: 2px solid #555; position: relative; cursor: pointer; }
-.hotbar-slot.selected { border-color: #ffff00; box-shadow: 0 0 10px #ffff00; }
-.slot-number { position: absolute; top: 2px; left: 4px; color: #fff; font-size: 12px; }
-.block-preview { width: 32px; height: 32px; margin: 6px auto; border-radius: 2px; }
-.item-count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 14px; font-weight: bold; }
-
-#crosshair { position: absolute; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.8); pointer-events: none; z-index: 4; transform: translate(-50%, -50%); display: none; }
+#crosshair { position: absolute; width: 20px; height: 20px; border: 2px solid rgba(255,255,250,0.8); pointer-events: none; z-index: 4; transform: translate(-50%, -50%); display: none; }
 #crosshair::after, #crosshair::before { content: ''; position: absolute; background-color: rgba(255,255,255,0.8); }
 #crosshair::after { top: 50%; left: -10px; right: -10px; height: 2px; }
 #crosshair::before { left: 50%; top: -10px; bottom: -10px; width: 2px; }
@@ -74,11 +61,80 @@ canvas { display: block; }
 #overlaySubtitle { font-size: 24px; color: #fff; margin-bottom: 40px; }
 #overlayHint { font-size: 22px; color: #ccc; line-height: 1.6; }
 
-/* 新增：剧情/彩蛋提示框 */
 #storyPopup {
     position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
     background: rgba(0,0,0,0.85); padding: 15px 30px; border-radius: 10px;
     color: #fff; font-size: 20px; z-index: 200; display: none; border: 2px solid #4CAF50;
+}
+
+#dialogueBox {
+    background: rgba(0,0,0,0.95);
+    z-index: 300;
+    padding: 40px;
+    border: 4px solid #d4af37;
+}
+#dialogueText { font-size: 24px; margin-bottom: 30px; max-width: 800px; text-align: center; line-height: 1.6; }
+.dialogue-option {
+    width: 500px;
+    padding: 15px;
+    margin: 10px;
+    font-size: 20px;
+    background: #333;
+    border: 2px solid #666;
+    cursor: pointer;
+    color: #fff;
+    transition: all 0.2s;
+}
+.dialogue-option:hover { background: #555; border-color: #d4af37; transform: scale(1.02); }
+#dialogueClose { font-size: 18px; color: #888; margin-top: 20px; }
+
+#backpackUI {
+    background: rgba(0,0,0,0.9);
+    z-index: 250;
+    padding: 30px;
+    border: 4px solid #8B4513;
+    width: 400px;
+    height: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+#backpackTitle { font-size: 32px; margin-bottom: 20px; color: #d4af37; }
+.backpack-item { font-size: 22px; margin: 10px 0; padding: 10px; background: #222; border: 1px solid #444; }
+#backpackClose { font-size: 18px; color: #888; margin-top: 20px; cursor: default; }
+
+/* 统一 Lucas 待机剧情画面样式（唯一版本，无重复） */
+#lucasStandbyScreen {
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #1a1a1a; 
+    display: none; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center; 
+    z-index: 150; 
+    color: #fff;
+}
+#lucasStandbyCanvas {
+    width: 80%;
+    max-width: 900px;
+    height: 600px;
+    margin-bottom: 30px;
+    border: 3px solid #d4af37;
+    border-radius: 10px;
+    background: #0a0a0a;
+}
+#lucasStoryText {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+    line-height: 1.6;
+}
+#lucasContinueHint {
+    font-size: 26px;
+    color: #4CAF50;
+    text-shadow: 2px 2px #000;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -89,40 +145,22 @@ canvas { display: block; }
     <div id="startTitle">Grounded World</div>
     <div id="startSubtitle">By Illusion Fashion</div>
     <div id="startPrompt">Press E to play</div>
-    <div id="startInspired">A unique experience, based on MC inspiration</div>
+    <div id="startInspired">A unique survival adventure</div>
     <div id="exitBtnMenu">❌ Exit</div>
+</div>
+
+<!-- 修复后的 Lucas 待机剧情画面 HTML（Canvas 结构） -->
+<div id="lucasStandbyScreen">
+    <canvas id="lucasStandbyCanvas"></canvas>
+    <div id="lucasStoryText"></div>
+    <div id="lucasContinueHint"></div>
 </div>
 
 <div id="difficultyScreen">
     <div id="difficultyTitle">Select Difficulty</div>
-    <div class="difficulty-btn" id="easyBtn">Easy - 2:00 Win</div>
-    <div class="difficulty-btn" id="normalBtn">Normal - 2:00 Win</div>
-    <div class="difficulty-btn" id="hardBtn">Hard - 2:00 Win</div>
-    <div class="difficulty-btn" id="extremeBtn">Extreme - 4:00 Win</div>
-    <div class="difficulty-btn" id="infinityBtn">Infinity - Endless</div>
-</div>
-
-<div id="rulesScreen">
-    <div id="rulesTitle">Game Rules & Controls</div>
-    <div id="rulesContent">
-        <strong>Movement:</strong><br>
-        - W/A/S/D or Arrow Keys: Move player<br>
-        - Spacebar: Jump<br><br>
-        <strong>Combat & Building:</strong><br>
-        - Left Click: Attack zombies / Mine blocks (All blocks breakable!)<br>
-        - T Key: Place selected block (Blocks block zombies!)<br>
-        - 1-9 Keys: Switch hotbar items<br><br>
-        <strong>Health & Hunger:</strong><br>
-        - ❤️ Health: 10 total, don't let it reach 0!<br>
-        - 🍖 Hunger: 10 total, eat zombie meat to restore<br>
-        - Health regenerates over time (except Extreme mode)<br><br>
-        <strong>Day & Night:</strong><br>
-        - Day: Bright sky, normal zombies<br>
-        - Night: Dark sky, MORE zombies spawn<br>
-        - Build a shelter to survive nights!
-    </div>
-    <div id="rulesCountdown">10</div>
-    <div id="rulesStartPrompt">Press any button to start!</div>
+    <div class="difficulty-btn" id="normalBtn">Normal - Survive 5 Days & Defeat Boss</div>
+    <div class="difficulty-btn" id="hardBtn">Hard - Survive 5 Days & Defeat Boss</div>
+    <div class="difficulty-btn" id="infinityBtn">Infinity - Endless Survival</div>
 </div>
 
 <div id="statusBar">
@@ -131,20 +169,10 @@ canvas { display: block; }
 </div>
 <div id="dayCounter">🌞 Day 1</div>
 <div id="topRightUI">
-    <div id="victoryTimer">⏱️ 02:00</div>
+    <div id="recordDisplay">🏆 Best: 0 Days</div>
+    <div id="buffUI">✨ Buffs: None</div>
     <div id="langToggle">EN</div>
     <div id="soundToggle">🔊</div>
-</div>
-<div id="hotbar">
-    <div class="hotbar-slot selected" data-slot="0"><div class="slot-number">1</div><div class="block-preview" style="background-color: #228B22;"></div><div class="item-count">64</div></div>
-    <div class="hotbar-slot" data-slot="1"><div class="slot-number">2</div><div class="block-preview" style="background-color: #8B4513;"></div><div class="item-count">64</div></div>
-    <div class="hotbar-slot" data-slot="2"><div class="slot-number">3</div><div class="block-preview" style="background-color: #A0522D;"></div><div class="item-count">1</div></div>
-    <div class="hotbar-slot" data-slot="3"><div class="slot-number">4</div><div class="block-preview"></div><div class="item-count"></div></div>
-    <div class="hotbar-slot" data-slot="4"><div class="slot-number">5</div><div class="block-preview"></div><div class="item-count"></div></div>
-    <div class="hotbar-slot" data-slot="5"><div class="slot-number">6</div><div class="block-preview"></div><div class="item-count"></div></div>
-    <div class="hotbar-slot" data-slot="6"><div class="slot-number">7</div><div class="block-preview"></div><div class="item-count"></div></div>
-    <div class="hotbar-slot" data-slot="7"><div class="slot-number">8</div><div class="block-preview"></div><div class="item-count"></div></div>
-    <div class="hotbar-slot" data-slot="8"><div class="slot-number">9</div><div class="block-preview"></div><div class="item-count"></div></div>
 </div>
 <div id="crosshair"></div>
 
@@ -154,52 +182,108 @@ canvas { display: block; }
     <div id="overlayHint">Press R to Respawn | Press H to Difficulties | Press T to Main Menu</div>
 </div>
 
-<!-- 新增：剧情/彩蛋提示框 -->
 <div id="storyPopup"></div>
 
+<div id="dialogueBox">
+    <div id="dialogueText"></div>
+    <div id="dialogueOptions"></div>
+    <div id="dialogueClose">ESC Close</div>
+</div>
+
+<div id="backpackUI">
+    <div id="backpackTitle">🎒 Backpack</div>
+    <div id="backpackContent"></div>
+    <div id="backpackClose">Press E to close</div>
+</div>
+
 <script>
-// ========== 100% 隔离的双语系统 ==========
 const LANG = {
     en: {
         startTitle: "Grounded World", startSubtitle: "By Illusion Fashion", startPrompt: "Press E to play",
-        startInspired: "A unique experience, based on MC inspiration", exitBtnMenu: "❌ Exit",
-        difficultyTitle: "Select Difficulty", easy: "Easy - 2:00 Win", normal: "Normal - 2:00 Win",
-        hard: "Hard - 2:00 Win", extreme: "Extreme - 4:00 Win", infinity: "Infinity - Endless",
-        rulesTitle: "Game Rules & Controls",
-        rulesContent: `
-            <strong>Movement:</strong><br>- W/A/S/D or Arrow Keys: Move player<br>- Spacebar: Jump<br><br>
-            <strong>Combat & Building:</strong><br>- Left Click: Attack zombies / Mine blocks<br>- T Key: Place selected block<br>- 1-9 Keys: Switch hotbar items<br><br>
-            <strong>Health & Hunger:</strong><br>- ❤️ Health: 10 total<br>- 🍖 Hunger: 10 total, eat zombie meat to restore<br>- Health regenerates over time (except Extreme mode)<br><br>
-            <strong>Day & Night:</strong><br>- Day: Bright sky, normal zombies<br>- Night: Dark sky, MORE zombies spawn<br>- Build a shelter!
-        `,
-        rulesStartPrompt: "Press any button to start!", gameOver: "GAME OVER", success: "SUCCESS!",
-        youSurvived: "You survived!", youStarved: "You starved to death!", youFell: "You fell into the void!",
-        killedByZombie: "You were killed by a zombie!", controlHint: "Press R to Respawn | Press H to Difficulties | Press T to Main Menu", day: "🌞 Day "
+        startInspired: "A unique survival adventure", exitBtnMenu: "❌ Exit",
+        difficultyTitle: "Select Difficulty",
+        normal: "Normal - Survive 5 Days & Defeat Boss",
+        hard: "Hard - Survive 5 Days & Defeat Boss",
+        infinity: "Infinity - Endless Survival",
+        gameOver: "GAME OVER", success: "VICTORY!",
+        youSurvived: "You defeated Lucas and saved the world!", youStarved: "You starved to death!",
+        youFell: "You fell into the void!", killedByZombie: "You were killed by a zombie!",
+        killedByBoss: "You were killed by Lucas!",
+        controlHint: "Press R to Respawn | Press H to Difficulties | Press T to Main Menu",
+        day: "🌞 Day ", bestRecord: "🏆 Best: ",
+        doctorGreet: "👋 Greetings, knight. I am the Plague Doctor 🐦‍⬛. How may I help you today?",
+        doctorOpt1: "🗡️ What's the purpose I'm fighting for?",
+        doctorOpt2: "📜 Game rules",
+        doctorOpt3: "✨ Daily Attachment Buff",
+        doctorPurposeAnswer: "🌟 You're fighting for the final of the civilization, and become the hero! 🦸",
+        doctorRuleAnswer: "🎮 Move: WASD/Arrows, Jump: Space. Attack: Left Click (3 range). Mine: Left click leaves/blocks for cherries 🍒. Talk: F near me. Backpack: E.",
+        doctorEnhanceTitle: "🎁 Choose daily permanent buff:",
+        enhance1: "❤️ +2 Max Health", enhance2: "⚡ +10% Speed", enhance3: "🗡️ +1 Attack Damage",
+        enhanceUsed: "⚠️ Already claimed today!",
+        doctorEnd: "🌈 May light protect you. ✨",
+        backpackTitle: "🎒 Backpack", backpackClose: "Press E to close",
+        cherry: "🍒 Cherry", eatBtn: "Eat 1",
+        bossWarning: "🌑 Night falls! Lucas is coming!",
+        bossDefeated: "Lucas defeated! You win!",
+        lowStatusWarn: "⚠️ Low Health/Hunger! Eat food quickly!",
+        lucasStory: "You were captured by Lucas while playing Grounded World. Now, you must defeat Lucas to win!",
+        pressTContinue: "Press T to continue"
     },
     zh: {
-        startTitle: "坐落世界", startSubtitle: "由 Illusion Fashion 制作", startPrompt: "按 E 开始游戏",
-        startInspired: "独特体验，灵感源于MC", exitBtnMenu: "❌ 退出",
-        difficultyTitle: "选择难度", easy: "简单 - 2:00 胜利", normal: "普通 - 2:00 胜利",
-        hard: "困难 - 2:00 胜利", extreme: "极限 - 4:00 胜利", infinity: "无限 - 无尽生存",
-        rulesTitle: "游戏规则与操作",
-        rulesContent: `
-            <strong>移动：</strong><br>- W/A/S/D 或方向键：移动玩家<br>- 空格键：跳跃<br><br>
-            <strong>战斗与建造：</strong><br>- 左键：攻击僵尸 / 挖掘方块<br>- T 键：放置方块<br>- 1-9 键：切换快捷栏物品<br><br>
-            <strong>生命值与饥饿值：</strong><br>- ❤️ 生命值：共10点<br>- 🍖 饥饿值：共10点，吃僵尸肉恢复<br>- 生命值随时间恢复（极限模式除外）<br><br>
-            <strong>昼夜循环：</strong><br>- 白天：明亮天空，正常僵尸数量<br>- 夜晚：黑暗天空，更多僵尸生成！<br>- 建造庇护所！
-        `,
-        rulesStartPrompt: "按任意键开始！", gameOver: "游戏结束", success: "恭喜通关！",
-        youSurvived: "你存活下来了！", youStarved: "你饿死了！", youFell: "你坠入虚空了！",
-        killedByZombie: "你被僵尸杀死了！", controlHint: "按 R 复活 | 按 H 难度选择 | 按 T 主菜单", day: "🌞 第 "
+        startTitle: "坐落世界", startSubtitle: "By Illusion Fashion", startPrompt: "按 E 开始",
+        startInspired: "独特生存冒险", exitBtnMenu: "❌ 退出",
+        difficultyTitle: "选择难度",
+        normal: "普通 - 存活5天击败Boss",
+        hard: "困难 - 存活5天击败Boss",
+        infinity: "无尽 - 无限生存",
+        gameOver: "游戏结束", success: "胜利!",
+        youSurvived: "你击败了Lucas，拯救世界!", youStarved: "你饿死了!",
+        youFell: "坠入虚空!", killedByZombie: "被僵尸杀死!",
+        killedByBoss: "被Lucas杀死!",
+        controlHint: "R 复活 | H 难度 | T 主菜单",
+        day: "🌞 第 ", bestRecord: "🏆 记录: ",
+        doctorGreet: "👋 你好，骑士。我是乌鸦医生 🐦‍⬛，需要帮助吗？",
+        doctorOpt1: "🗡️ 我的目标是什么？",
+        doctorOpt2: "📜 游戏规则",
+        doctorOpt3: "✨ 每日加成",
+        doctorPurposeAnswer: "🌟 你为文明终末而战，成为英雄！🦸",
+        doctorRuleAnswer: "🎮 移动WASD，跳跃空格。左键攻击/挖树叶掉樱桃 🍒。靠近按F对话，E打开背包。",
+        doctorEnhanceTitle: "🎁 选择每日永久加成：",
+        enhance1: "❤️ +2 最大生命", enhance2: "⚡ +10% 移动速度", enhance3: "🗡️ 攻击力+1",
+        enhanceUsed: "⚠️ 今日已领取",
+        doctorEnd: "🌈 愿光明守护你。✨",
+        backpackTitle: "🎒 背包", backpackClose: "按E关闭",
+        cherry: "🍒 樱桃", eatBtn: "吃一个",
+        bossWarning: "🌑 夜幕降临！Lucas来袭！",
+        bossDefeated: "Lucas已被击败！你胜利了！",
+        lowStatusWarn: "⚠️ 状态危急！快补充食物！",
+        lucasStory: "你在玩Grounded world的时候，不幸坠入Lucas手中，如今，你要打败lucas才能赢得胜利！",
+        pressTContinue: "按 T 继续"
     }
 };
+
+// 受伤音效
+const sounds = {
+    hurt: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-male-grunt-of-pain-2296.mp3'),
+};
+function playSound(name) {
+    if (soundMuted || !sounds[name]) return;
+    try {
+        sounds[name].currentTime = 0;
+        sounds[name].play().catch(()=>{});
+    } catch(e){}
+}
 
 let currentLang = 'en';
 let soundMuted = false;
 let gameState = 'start';
-let rulesCountdown = 10;
-let rulesCanStart = false;
 let currentDay = 1;
+let isPaused = false;
+let dailyUpgradeUsed = false;
+let highestSurvivalDay = localStorage.getItem('groundedWorldRecord') || 0;
+let showLucasStandby = false;
+
+let playerBuffs = { maxHealth: 0, speed: 0, attack: 0 };
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -208,287 +292,566 @@ canvas.height = window.innerHeight;
 
 const BLOCK_SIZE = 48;
 const WORLD_HEIGHT = 64;
-const DAY_LENGTH = 85000;
-const DAY_TIME = 45000;
-const DUSK_DURATION = 4000;
-const DAWN_DURATION = 4000;
-const NIGHT_TIME = 32000;
+const DAY_LENGTH = 145000;
+const DAY_TIME = 60000;
+const DUSK_DURATION = 5000;
+const DAWN_DURATION = 5000;
+const NIGHT_TIME = 75000;
 const GRAVITY = 0.5;
 const WORLD_SEED = 54321;
-const ATTACK_RANGE = BLOCK_SIZE * 3.5;
+const ATTACK_WIDTH = BLOCK_SIZE * 3;
+const ATTACK_HEIGHT = BLOCK_SIZE * 2.5;
 const WORLD_LEFT_BOUND = 0;
-const WORLD_RIGHT_BOUND = 200 * BLOCK_SIZE;
-const ITEM_LIFETIME = 4000;
+const WORLD_RIGHT_BOUND = 300 * BLOCK_SIZE;
+const ITEM_LIFETIME = 8000;
 
 const DIFFICULTY = {
-    EASY: { zombieHealth: 3, minZombies:1, maxZombies:3, victoryTime:120000, regenInterval:6000, regenAmount:1 },
-    NORMAL: { zombieHealth:3, minZombies:2, maxZombies:5, victoryTime:120000, regenInterval:6000, regenAmount:1 },
-    HARD: { zombieHealth:5, minZombies:1, maxZombies:3, victoryTime:120000, regenInterval:10000, regenAmount:1 },
-    EXTREME: { zombieHealth:10, minZombies:1, maxZombies:3, victoryTime:240000, regenInterval:0, regenAmount:0 },
-    INFINITY: { zombieHealth:4, minZombies:1, maxZombies:4, victoryTime:0, regenInterval:8000, regenAmount:1 }
+    NORMAL: { zombieHealth:3, minZombies:2, maxZombies:5, bossHealth:80, bossDamage:2, regenInterval:6000, regenAmount:1, isInfinity:false },
+    HARD: { zombieHealth:5, minZombies:3, maxZombies:8, bossHealth:80, bossDamage:2, regenInterval:10000, regenAmount:1, isInfinity:false },
+    INFINITY: { zombieHealth:4, minZombies:2, maxZombies:8, bossHealth:0, bossDamage:0, regenInterval:8000, regenAmount:1, isInfinity:true }
 };
-let currentDifficulty = DIFFICULTY.EASY;
+let currentDifficulty = DIFFICULTY.NORMAL;
 
 const BLOCK_TYPES = {
-    AIR: { id: 0, color: 'transparent', solid: false },
-    GRASS: { id: 1, color: '#228B22', solid: true, drop: 'GRASS' },
-    DIRT: { id: 2, color: '#8B4513', solid: true, drop: 'DIRT' },
-    STONE: { id: 3, color: '#808080', solid: true, drop: 'STONE' },
-    WOOD: { id: 8, color: '#6B4423', solid: true, drop: 'WOOD' },
-    LEAVES: { id: 9, color: '#1B5E20', solid: false, drop: null },
-    PLACED: { id: 10, color: '#5D4037', solid: true, drop: 'DIRT' }
+    AIR: { id:0, color:'transparent', solid:false },
+    GRASS: { id:1, color:'#228B22', solid:true, drop:null },
+    DIRT: { id:2, color:'#8B4513', solid:true, drop:null },
+    STONE: { id:3, color:'#808080', solid:true, drop:null },
+    WOOD: { id:8, color:'#6B4423', solid:true, drop:null },
+    LEAVES: { id:9, color:'#1B5E20', solid:false, drop:'CHERRY', dropChance: 1/3 },
+    PLACED: { id:10, color:'#5D4037', solid:true, drop:null }
 };
 
 const FOOD_TYPES = {
-    RAW_ZOMBIE_MEAT: { hungerRestore: 2, healthRestore: 1, color: '#8B4513' }
+    CHERRY: { hungerRestore:3, healthRestore:1, color:'#FF0000' },
+    BOSS_HEART: { hungerRestore:0, healthRestore:10, color:'#FF0000' }
 };
 
 const player = {
-    x: canvas.width / 2, y: 10 * BLOCK_SIZE, w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 1.8,
-    vx: 0, vy: 0, speed: 5, jumpPower: -12, onGround: false,
-    health: 10, hunger: 10, lastHungerDrop: 0, lastHealthRegen: 0,
-    hotbar: [
-        { type: 'GRASS', count: 64 }, { type: 'DIRT', count: 64 }, { type: 'WOOD', count: 1 },
-        null, null, null, null, null, null
-    ],
-    selectedHotbar: 0, animFrame: 0, animTimer: 0, attackCooldown: 0,
-    lastGroundY: 10 * BLOCK_SIZE, // 新增：记录上一次地面高度用于掉落伤害
-    name: "Bob" // 新增：玩家名字
+    x:0, y:0, w:BLOCK_SIZE*0.8, h:BLOCK_SIZE*1.8,
+    vx:0, vy:0, speed:5, jumpPower:-12, onGround:false,
+    health:10, maxHealth:10, hunger:10, lastHungerDrop:0, lastHealthRegen:0,
+    animFrame:0, animTimer:0, attackCooldown:0, attackDamage:1, lastGroundY:0
 };
 
-const camera = { x: 0, y: 0 };
+const camera = { x:0, y:0 };
 let world = [];
 let mobs = [];
+let boss = null;
+let bossSpawned = false;
+let bossDefeated = false;
+let isBossSummoning = false;
+let lastBossSummonTime = 0;
 let droppedItems = [];
 let dayTime = 0;
 let isGameOver = false;
 let damageCooldown = 0;
 const keys = {};
-const mouse = { x: 0, y: 0, button: 0 };
+const mouse = { x:0, y:0, button:0 };
 let lastTimestamp = 0;
 let lastZombieSpawnTime = 0;
-let survivalTime = 0;
+let lastInfinityLucasSpawnDay = 0;
 
-// ========== 新增：剧情/彩蛋系统 ==========
-let storyShown = { welcome: false, firstNight: false, day3Easter: false };
-function showStoryPopup(text, duration = 3000) {
-    const popup = document.getElementById('storyPopup');
-    popup.innerText = text;
-    popup.style.display = 'block';
-    setTimeout(() => { popup.style.display = 'none'; }, duration);
+let plagueDoctor = {
+    x:0, y:0, w:BLOCK_SIZE*0.8, h:BLOCK_SIZE*1.8, spawned:false, vx:0, vy:0, speed:4,
+    health:9999, attackDamage:2, attackCooldown:0, fights:false, lastAttackTime:0,
+    animFrame:0, animTimer:0, onGround:false
+};
+
+let backpack = { cherry:0 };
+let storyShown = { welcome:false, firstNight:false, bossWarning:false, doctorJoin:false };
+
+// Canvas绘制Lucas待机画面
+function drawLucasStandbyImage() {
+    const canvas = document.getElementById('lucasStandbyCanvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const scale = Math.min(w / 1280, h / 960);
+
+    // 背景
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, '#0a0a1a');
+    bgGrad.addColorStop(1, '#1a2a4a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // 棋盘格
+    const tileSize = 48 * scale;
+    const startX = w * 0.1, startY = h * 0.1, endX = w * 0.9, endY = h * 0.9;
+    for (let x = startX; x < endX; x += tileSize) {
+        for (let y = startY; y < endY; y += tileSize) {
+            const col = Math.floor((x - startX) / tileSize);
+            const row = Math.floor((y - startY) / tileSize);
+            ctx.fillStyle = (col + row) % 2 === 0 ? '#4a88b8' : '#5a98c8';
+            ctx.fillRect(x, y, tileSize, tileSize);
+        }
+    }
+
+    // 红心
+    const heartSize = 48 * scale, heartY = h * 0.02;
+    for (let i = 0; i < 9; i++) {
+        drawHeart(ctx, w*0.02 + i*(heartSize+8)*scale, heartY, heartSize, '#ff3333');
+    }
+
+    // 饥饿值
+    const hungerSize = 48 * scale, hungerY = heartY + heartSize + 8*scale;
+    for (let i = 0; i < 9; i++) {
+        drawHunger(ctx, w*0.02 + i*(hungerSize+8)*scale, hungerY, hungerSize, '#ffaa00');
+    }
+
+    // 岛屿
+    const islandX = w*0.3, islandY = h*0.4, islandW = w*0.4, islandH = h*0.3;
+    ctx.fillStyle = '#4CAF50';
+    ctx.beginPath();
+    ctx.moveTo(islandX, islandY);
+    ctx.lineTo(islandX+islandW*0.8, islandY+islandH*0.2);
+    ctx.lineTo(islandX+islandW, islandY+islandH*0.5);
+    ctx.lineTo(islandX+islandW*0.6, islandY+islandH);
+    ctx.lineTo(islandX+islandW*0.2, islandY+islandH*0.9);
+    ctx.lineTo(islandX, islandY+islandH*0.6);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#8B4513';
+    ctx.beginPath();
+    ctx.moveTo(islandX, islandY+islandH*0.6);
+    ctx.lineTo(islandX+islandW*0.2, islandY+islandH*0.9);
+    ctx.lineTo(islandX+islandW*0.6, islandY+islandH);
+    ctx.lineTo(islandX+islandW, islandY+islandH*0.5);
+    ctx.lineTo(islandX+islandW*0.8, islandY+islandH*0.2);
+    ctx.lineTo(islandX+islandW*0.9, islandY+islandH*0.7);
+    ctx.lineTo(islandX+islandW*0.7, islandY+islandH);
+    ctx.lineTo(islandX+islandW*0.3, islandY+islandH*0.95);
+    ctx.lineTo(islandX+islandW*0.1, islandY+islandH*0.8);
+    ctx.closePath();
+    ctx.fill();
+
+    // 树
+    const treeX = islandX+islandW*0.2, treeY = islandY;
+    const trunkW = 48*scale, trunkH = 96*scale, leafW = 96*scale, leafH = 96*scale;
+    ctx.fillStyle = '#6B4423';
+    ctx.fillRect(treeX, treeY, trunkW, trunkH);
+    ctx.fillStyle = '#228B22';
+    ctx.fillRect(treeX - leafW/2 + trunkW/2, treeY - leafH, leafW, leafH);
+
+    // 僵尸
+    const zombieX = islandX+islandW*0.6, zombieY = islandY+islandH*0.1, zSize = 48*scale;
+    ctx.fillStyle = '#2E7D32';
+    ctx.fillRect(zombieX, zombieY, zSize, zSize*1.5);
+    ctx.fillStyle = '#0000FF';
+    ctx.fillRect(zombieX+zSize*0.2, zombieY+zSize*0.3, zSize*0.15, zSize*0.15);
+    ctx.fillRect(zombieX+zSize*0.65, zombieY+zSize*0.3, zSize*0.15, zSize*0.15);
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(zombieX+zSize*0.3, zombieY+zSize*0.6, zSize*0.4, zSize*0.3);
+
+    // Lucas
+    const lucasX = w*0.65, lucasY = h*0.2, lSize = 48*scale;
+    ctx.fillStyle = '#5D3A1A';
+    ctx.fillRect(lucasX, lucasY, lSize*3, lSize*2);
+    ctx.fillStyle = '#F5C096';
+    ctx.fillRect(lucasX+lSize*0.5, lucasY+lSize*0.5, lSize*2, lSize*2.5);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(lucasX+lSize*1, lucasY+lSize*1, lSize*0.6, lSize*0.8);
+    ctx.fillRect(lucasX+lSize*1.8, lucasY+lSize*1, lSize*0.6, lSize*0.8);
+    ctx.fillStyle = '#5500AA';
+    ctx.fillRect(lucasX+lSize*1.15, lucasY+lSize*1.4, lSize*0.3, lSize*0.3);
+    ctx.fillRect(lucasX+lSize*1.95, lucasY+lSize*1.4, lSize*0.3, lSize*0.3);
+    ctx.fillStyle = '#5500AA';
+    ctx.fillRect(lucasX+lSize*0.8, lucasY+lSize*3, lSize*1.8, lSize*2);
+    ctx.fillStyle = '#F5C096';
+    ctx.fillRect(lucasX+lSize*2.6, lucasY+lSize*4, lSize*1.5, lSize*1.5);
+
+    // 草丛
+    ctx.fillStyle = '#4CAF50';
+    ctx.beginPath();
+    ctx.arc(islandX+islandW*0.4, islandY+islandH*0.6, 32*scale, 0, Math.PI*2);
+    ctx.fill();
+
+    function drawHeart(ctx, x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x+size/2, y+size/5);
+        ctx.bezierCurveTo(x+size/5, y, x, y+size/2, x+size/2, y+size);
+        ctx.bezierCurveTo(x+size, y+size/2, x+size*4/5, y, x+size/2, y+size/5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#aa0000';
+        ctx.lineWidth = 2*scale;
+        ctx.stroke();
+    }
+    function drawHunger(ctx, x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x+size/2, y+size/2, size/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(x+size/2, y+size/2, size/4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#aa7700';
+        ctx.lineWidth = 2*scale;
+        ctx.stroke();
+    }
 }
 
-// ========== 核心：地形生成（不刷新已破坏方块） ==========
-function noise2D(x,y,seed) { const n = Math.sin(x*12.9898 + y*78.233 + seed)*43758.5453; return n - Math.floor(n); }
-function perlinNoise2D(x,y,seed,oct=3) { let total=0,f=1,a=1,max=0; for(let i=0;i<oct;i++){total+=noise2D(x*f,y*f,seed)*a; max+=a; a*=0.5; f*=2; } return total/max; }
+// 显示Lucas待机画面
+function showLucasStandbyScreen() {
+    showLucasStandby = true;
+    isPaused = true;
+    const standbyScreen = document.getElementById('lucasStandbyScreen');
+    const storyText = document.getElementById('lucasStoryText');
+    const continueHint = document.getElementById('lucasContinueHint');
+    
+    drawLucasStandbyImage();
+    storyText.innerText = LANG[currentLang].lucasStory;
+    continueHint.innerText = LANG[currentLang].pressTContinue;
+    
+    standbyScreen.style.display = 'flex';
+}
+
+// 关闭待机画面
+function startGameAfterStandby() {
+    if(!showLucasStandby) return;
+    showLucasStandby = false;
+    isPaused = false;
+    document.getElementById('lucasStandbyScreen').style.display = 'none';
+    generateNewWorld();
+}
+
+function showStoryPopup(text, duration=3000) {
+    const p = document.getElementById('storyPopup');
+    p.innerText = text;
+    p.style.display = 'block';
+    setTimeout(()=>p.style.display='none', duration);
+}
+
+function openDoctorDialogue() {
+    if(isPaused) return;
+    isPaused = true;
+    const box = document.getElementById('dialogueBox');
+    const text = document.getElementById('dialogueText');
+    const opts = document.getElementById('dialogueOptions');
+    text.innerHTML = LANG[currentLang].doctorGreet;
+    opts.innerHTML = `
+        <div class="dialogue-option" onclick="selectDoctorOption(1)">${LANG[currentLang].doctorOpt1}</div>
+        <div class="dialogue-option" onclick="selectDoctorOption(2)">${LANG[currentLang].doctorOpt2}</div>
+        <div class="dialogue-option" onclick="selectDoctorOption(3)">${LANG[currentLang].doctorOpt3}</div>
+    `;
+    box.style.display = 'flex';
+}
+
+function selectDoctorOption(option) {
+    const text = document.getElementById('dialogueText');
+    const opts = document.getElementById('dialogueOptions');
+    if(option===1) {
+        text.innerHTML = LANG[currentLang].doctorPurposeAnswer;
+        opts.innerHTML = '';
+    } else if(option===2) {
+        text.innerHTML = LANG[currentLang].doctorRuleAnswer;
+        opts.innerHTML = '';
+    } else if(option===3) {
+        if(dailyUpgradeUsed) {
+            text.innerHTML = LANG[currentLang].enhanceUsed;
+            opts.innerHTML = '';
+        } else {
+            text.innerHTML = LANG[currentLang].doctorEnhanceTitle;
+            opts.innerHTML = `
+                <div class="dialogue-option" onclick="applyEnhance(1)">${LANG[currentLang].enhance1}</div>
+                <div class="dialogue-option" onclick="applyEnhance(2)">${LANG[currentLang].enhance2}</div>
+                <div class="dialogue-option" onclick="applyEnhance(3)">${LANG[currentLang].enhance3}</div>
+            `;
+        }
+    }
+}
+
+function applyEnhance(c) {
+    if(c===1) { player.maxHealth+=2; player.health=player.maxHealth; playerBuffs.maxHealth+=2; }
+    if(c===2) { player.speed*=1.1; playerBuffs.speed+=0.1; }
+    if(c===3) { player.attackDamage+=1; playerBuffs.attack+=1; }
+    dailyUpgradeUsed = true;
+    document.getElementById('dialogueText').innerHTML = LANG[currentLang].doctorEnd;
+    document.getElementById('dialogueOptions').innerHTML = '';
+    updateStatusUI(); updateBuffUI();
+}
+
+function closeDialogue() {
+    document.getElementById('dialogueBox').style.display='none';
+    isPaused = false;
+}
+
+function updateBuffUI() {
+    const b = document.getElementById('buffUI');
+    b.style.display='block';
+    let t = '✨ Buffs: ';
+    let l = [];
+    if(playerBuffs.maxHealth>0) l.push(`+${playerBuffs.maxHealth} HP`);
+    if(playerBuffs.speed>0) l.push(`+${(playerBuffs.speed*10).toFixed(0)}% Speed`);
+    if(playerBuffs.attack>0) l.push(`+${playerBuffs.attack} ATK`);
+    b.innerText = l.length?l.join(' | '):'None';
+}
+
+let backpackOpen = false;
+function toggleBackpack() {
+    backpackOpen = !backpackOpen;
+    const ui = document.getElementById('backpackUI');
+    const c = document.getElementById('backpackContent');
+    if(backpackOpen) {
+        c.innerHTML = `
+            <div class="backpack-item">${LANG[currentLang].cherry}: ${backpack.cherry}
+            <button onclick="eatCherry()">${LANG[currentLang].eatBtn}</button></div>`;
+        ui.style.display='flex'; isPaused=true;
+    } else { ui.style.display='none'; isPaused=false; }
+}
+
+function eatCherry() {
+    if(backpack.cherry<=0) return;
+    backpack.cherry--;
+    player.hunger = Math.min(10, player.hunger+3);
+    player.health = Math.min(player.maxHealth, player.health+1);
+    toggleBackpack(); toggleBackpack();
+    updateStatusUI();
+}
+
+function noise2D(x,y,s){let n=Math.sin(x*12.9898+y*78.233+s)*43758.5453;return n-Math.floor(n);}
+function perlin(x,y,s,o=3){let t=0,f=1,a=1,m=0;for(let i=0;i<o;i++){t+=noise2D(x*f,y*f,s)*a;m+=a;a*=0.5;f*=2;}return t/m;}
 
 function initWorldArray() {
-    world = [];
-    for (let x = 0; x <= WORLD_RIGHT_BOUND/BLOCK_SIZE + 10; x++) {
-        world[x] = Array(WORLD_HEIGHT).fill(BLOCK_TYPES.AIR);
-    }
+    world=[];
+    for(let x=0;x<WORLD_RIGHT_BOUND/BLOCK_SIZE+10;x++)world[x]=Array(WORLD_HEIGHT).fill(BLOCK_TYPES.AIR);
+}
+
+function findGroundY(x){
+    let bx=Math.floor(x/BLOCK_SIZE);
+    for(let y=0;y<WORLD_HEIGHT;y++)if(world[bx]&&world[bx][y]&&world[bx][y].solid)return y*BLOCK_SIZE;
+    return 10*BLOCK_SIZE;
 }
 
 function generateNewWorld() {
     initWorldArray();
-    // 预生成所有地形
-    for (let x = 0; x <= WORLD_RIGHT_BOUND/BLOCK_SIZE + 10; x++) {
-        const height = Math.floor(perlinNoise2D(x / 25, 0, WORLD_SEED) * 4) + 18;
-        for (let y = 0; y < WORLD_HEIGHT; y++) {
-            if (y === height) world[x][y] = BLOCK_TYPES.GRASS;
-            else if (y > height && y < height + 3) world[x][y] = BLOCK_TYPES.DIRT;
-            else if (y >= height + 3) world[x][y] = BLOCK_TYPES.STONE;
+    for(let x=0;x<WORLD_RIGHT_BOUND/BLOCK_SIZE+10;x++){
+        let h=Math.floor(perlin(x/25,0,WORLD_SEED)*4)+18;
+        for(let y=0;y<WORLD_HEIGHT;y++){
+            if(y===h)world[x][y]=BLOCK_TYPES.GRASS;
+            else if(y>h&&y<h+3)world[x][y]=BLOCK_TYPES.DIRT;
+            else if(y>=h+3)world[x][y]=BLOCK_TYPES.STONE;
         }
-        // 生成树木
-        if (Math.random() < 0.02) {
-            for (let ty = height - 4; ty < height; ty++) if (ty >= 0) world[x][ty] = BLOCK_TYPES.WOOD;
-            for (let tx = x - 1; tx <= x + 1; tx++) {
-                for (let ty = height - 5; ty < height - 3; ty++) {
-                    if (tx >= 0 && ty >= 0) world[tx][ty] = BLOCK_TYPES.LEAVES;
-                }
-            }
+        if(Math.random()<0.04){
+            for(let ty=h-5;ty<h;ty++)if(ty>=0)world[x][ty]=BLOCK_TYPES.WOOD;
+            for(let tx=x-2;tx<=x+2;tx++)for(let ty=h-7;ty<h-2;ty++)if(tx>=0&&ty>=0)world[tx][ty]=BLOCK_TYPES.LEAVES;
         }
     }
+    mobs=[];boss=null;bossSpawned=false;bossDefeated=false;isBossSummoning=false;droppedItems=[];dayTime=0;currentDay=1;isGameOver=false;
+    dailyUpgradeUsed=false;playerBuffs={maxHealth:0,speed:0,attack:0};plagueDoctor.fights=false;
+    lastInfinityLucasSpawnDay = 0;
+    plagueDoctor.x=canvas.width/2;plagueDoctor.y=findGroundY(plagueDoctor.x)-plagueDoctor.h;plagueDoctor.spawned=true;
+    player.x=plagueDoctor.x+4*BLOCK_SIZE;player.y=findGroundY(player.x)-player.h;player.lastGroundY=player.y;
+    player.vx=player.vy=0;player.health=player.maxHealth=10;player.hunger=10;player.speed=5;player.attackDamage=1;
+    backpack.cherry=5;backpackOpen=false;
+    document.getElementById('backpackUI').style.display='none';document.getElementById('dialogueBox').style.display='none';
+    isPaused=false;document.getElementById('gameOverlay').style.display='none';
+    document.getElementById('statusBar').style.display = 'flex';
+    document.getElementById('dayCounter').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
     
-    mobs = []; droppedItems = []; dayTime = 0; currentDay = 1; survivalTime = 0;
-    isGameOver = false; player.lastHungerDrop = 0; player.lastHealthRegen = 0; lastZombieSpawnTime = 0;
-    player.lastGroundY = 10 * BLOCK_SIZE; // 重置掉落高度记录
-    storyShown = { welcome: false, firstNight: false, day3Easter: false }; // 重置剧情
-    
-    document.getElementById('gameOverlay').style.display = 'none';
-    document.getElementById('victoryTimer').style.display = (currentDifficulty.victoryTime > 0) ? 'block' : 'none';
-    
-    player.x = canvas.width / 2; player.y = 10 * BLOCK_SIZE; player.vx = 0; player.vy = 0;
-    player.health = 10; player.hunger = 10;
-    player.hotbar = [ { type: 'GRASS', count: 64 }, { type: 'DIRT', count: 64 }, { type: 'WOOD', count: 1 }, null, null, null, null, null, null ];
-    player.selectedHotbar = 0;
-    
-    updateStatusUI(); updateHotbarUI();
-    document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
+    document.getElementById('recordDisplay').style.display=currentDifficulty.isInfinity?'block':'none';
+    document.getElementById('recordDisplay').innerHTML=`${LANG[currentLang].bestRecord}${highestSurvivalDay}`;
+    updateStatusUI();updateBuffUI();
+    document.getElementById('dayCounter').innerHTML=LANG[currentLang].day+currentDay + (currentLang==='zh'?'天':'');
 }
 
-// ========== 🔴 核心修复：不卡方块的碰撞检测 ==========
-function checkCollision(x, y, w, h) {
-    const m = 4;
-    const startX = Math.floor((x + m) / BLOCK_SIZE);
-    const endX = Math.floor((x + w - m) / BLOCK_SIZE);
-    const startY = Math.floor(y / BLOCK_SIZE);
-    const endY = Math.floor((y + h) / BLOCK_SIZE);
-    
-    for (let bx = startX; bx <= endX; bx++) {
-        for (let by = startY; by <= endY; by++) {
-            if (world[bx] && world[bx][by] && world[bx][by].solid) {
-                return true;
-            }
-        }
-    }
+function checkCollision(x,y,w,h){
+    let m=4;
+    let sx=Math.floor((x+m)/BLOCK_SIZE),ex=Math.floor((x+w-m)/BLOCK_SIZE);
+    let sy=Math.floor(y/BLOCK_SIZE),ey=Math.floor((y+h)/BLOCK_SIZE);
+    for(let bx=sx;bx<=ex;bx++)for(let by=sy;by<=ey;by++)if(world[bx]&&world[bx][by]&&world[bx][by].solid)return true;
     return false;
 }
 
-// ========== 昼夜循环 ==========
-function updateDayNightCycle(deltaTime) {
-    if (gameState !== 'playing') return;
-    dayTime += deltaTime;
-    
-    // 新增：欢迎剧情
-    if (!storyShown.welcome && survivalTime > 1000) {
-        storyShown.welcome = true;
-        showStoryPopup(`Welcome, ${player.name}! Survive the night...`, 4000);
+function updateDayNightCycle(dt){
+    if(gameState!=='playing'||isPaused)return;
+    dayTime+=dt;
+    if(!currentDifficulty.isInfinity && currentDay===5&&dayTime>DAY_TIME&&!bossSpawned){
+        bossSpawned=true;spawnBoss();showStoryPopup(LANG[currentLang].bossWarning,5000);
     }
-    
-    // 新增：第一夜剧情
-    if (!storyShown.firstNight && currentDay === 1 && dayTime > DAY_TIME) {
-        storyShown.firstNight = true;
-        showStoryPopup("Night falls! The Undead Crews are coming...", 3000);
+    if(currentDifficulty.isInfinity && isNightTime() && currentDay % 10 === 0 && currentDay !== lastInfinityLucasSpawnDay){
+        spawnInfinityLucas();
+        spawnInfinityLucas();
+        lastInfinityLucasSpawnDay = currentDay;
+        showStoryPopup("⚠️ 10th Night! 2 Lucas are coming!", 5000);
     }
-    
-    if (dayTime >= DAY_LENGTH) {
-        dayTime -= DAY_LENGTH;
-        currentDay++;
-        document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
-        
-        // 新增：第3天彩蛋提示
-        if (currentDay === 3 && !storyShown.day3Easter) {
-            storyShown.day3Easter = true;
-            showStoryPopup("Something special happens tonight...", 3000);
+    if(dayTime>=DAY_LENGTH){
+        dayTime-=DAY_LENGTH;currentDay++;dailyUpgradeUsed=false;
+        document.getElementById('dayCounter').innerHTML=LANG[currentLang].day+currentDay + (currentLang==='zh'?'天':'');
+        if(currentDifficulty.isInfinity){
+            currentDifficulty.maxZombies += 2;
         }
     }
 }
 
-function getSkyColor() {
-  const duskEnd = DAY_TIME + DUSK_DURATION;
-  const dawnStart = duskEnd + NIGHT_TIME;
-
-  if (dayTime <= DAY_TIME) {
-    return 'rgb(135, 206, 235)';
-  }
-
-  if (dayTime <= duskEnd) {
-    const prog = (dayTime - DAY_TIME) / DUSK_DURATION;
-    const r = Math.floor(135 + (255-135)*prog);
-    const g = Math.floor(206 + (140-206)*prog);
-    const b = Math.floor(235 + (0-235)*prog);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  if (dayTime <= dawnStart) {
-    return 'rgb(18, 18, 40)';
-  }
-
-  const prog = (dayTime - dawnStart) / DAWN_DURATION;
-  const r = Math.floor(18 + (135-18)*prog);
-  const g = Math.floor(18 + (206-18)*prog);
-  const b = Math.floor(40 + (235-40)*prog);
-  return `rgb(${r}, ${g}, ${b})`;
-}
-function isNightTime() {
-  const duskEnd = DAY_TIME + DUSK_DURATION;
-  const dawnStart = duskEnd + NIGHT_TIME;
-  return dayTime > DAY_TIME && dayTime < dawnStart;
+function getSkyColor(){
+    if(dayTime<=DAY_TIME)return'rgb(135,206,235)';
+    if(dayTime<=DAY_TIME+DUSK_DURATION){let p=(dayTime-DAY_TIME)/DUSK_DURATION;return`rgb(${135+120*p},${206-66*p},${235-235*p})`;}
+    if(dayTime<=DAY_LENGTH-DAWN_DURATION)return'rgb(18,18,40)';
+    let p=(dayTime-(DAY_LENGTH-DAWN_DURATION))/DAWN_DURATION;return`rgb(${18+117*p},${18+188*p},${40+195*p})`;
 }
 
-// ========== 玩家更新（新增掉落伤害） ==========
-function updatePlayer(deltaTime, currentTime) {
-    if (isGameOver || gameState !== 'playing') return;
+function isNightTime(){return dayTime>DAY_TIME;}
 
-    player.vx = 0;
-    if (keys['a'] || keys['A'] || keys['ArrowLeft']) player.vx = -player.speed;
-    if (keys['d'] || keys['D'] || keys['ArrowRight']) player.vx = player.speed;
-    if ((keys[' '] || keys['Space']) && player.onGround) { player.vy = player.jumpPower; player.onGround = false; }
-
-    player.vy += GRAVITY;
-    let newX = player.x + player.vx;
-    let newY = player.y + player.vy;
-    player.onGround = false;
-
-    if (!checkCollision(newX, player.y, player.w, player.h)) {
-        player.x = newX;
+function updatePlayer(dt,now){
+    if(isGameOver||gameState!=='playing'||isPaused)return;
+    player.vx=0;
+    if(keys['a']||keys['ArrowLeft'])player.vx=-player.speed;
+    if(keys['d']||keys['ArrowRight'])player.vx=player.speed;
+    if(keys[' ']&&player.onGround){player.vy=player.jumpPower;player.onGround=false;}
+    player.vy+=GRAVITY;
+    let nx=player.x+player.vx,ny=player.y+player.vy;
+    if(!checkCollision(nx,player.y,player.w,player.h))player.x=nx;
+    if(player.x<WORLD_LEFT_BOUND)player.x=WORLD_LEFT_BOUND;
+    if(player.x+player.w>WORLD_RIGHT_BOUND)player.x=WORLD_RIGHT_BOUND-player.w;
+    if(!checkCollision(player.x,ny,player.w,player.h)){player.y=ny;}else{if(player.vy>0)player.onGround=true;player.vy=0;}
+    if(player.attackCooldown>0)player.attackCooldown-=dt;
+    if(now-player.lastHungerDrop>=(isNightTime()?4000:8000)){
+        player.hunger=Math.max(0,player.hunger-1);player.lastHungerDrop=now;updateStatusUI();
     }
-    
-    if(player.x < WORLD_LEFT_BOUND) player.x = WORLD_LEFT_BOUND;
-    if(player.x + player.w > WORLD_RIGHT_BOUND) player.x = WORLD_RIGHT_BOUND - player.w;
+    if(now-player.lastHealthRegen>=currentDifficulty.regenInterval&&player.health<player.maxHealth&&player.hunger>3){
+        player.health=Math.min(player.maxHealth,player.health+currentDifficulty.regenAmount);
+        player.lastHealthRegen=now;updateStatusUI();
+    }
 
-    if (!checkCollision(player.x, newY, player.w, player.h)) {
-        player.y = newY;
+    if(player.health < 3 || player.hunger < 3){
+        showStoryPopup(LANG[currentLang].lowStatusWarn, 1000);
+    }
+
+    if(player.hunger<=0)triggerGameOver(LANG[currentLang].youStarved);
+    if(player.y>WORLD_HEIGHT*BLOCK_SIZE)triggerGameOver(LANG[currentLang].youFell);
+    camera.x=player.x-canvas.width/2+player.w/2;
+    camera.y=player.y-canvas.height/2+player.h/2;
+    checkDoctorInteraction();
+
+    if (Math.abs(player.vx) > 0.1) {
+        player.animTimer += dt;
+        if (player.animTimer > 100) {
+            player.animFrame = (player.animFrame + 1) % 4;
+            player.animTimer = 0;
+        }
     } else {
-        if (player.vy > 0) {
-            player.onGround = true;
-            // 新增：掉落伤害计算
-            const fallHeight = (player.y - player.lastGroundY) / BLOCK_SIZE;
-            if (fallHeight >= 5) {
-                const damage = Math.floor(fallHeight / 5);
-                player.health = Math.max(0, player.health - damage);
-                updateStatusUI();
-                if (player.health <= 0) triggerGameOver(LANG[currentLang].youFell);
-            }
-            player.lastGroundY = player.y;
-        }
-        player.vy = 0;
+        player.animFrame = 0;
+        player.animTimer = 0;
     }
-
-    if (Math.abs(player.vx) > 0) {
-        player.animTimer += deltaTime;
-        if (player.animTimer > 100) { player.animFrame = (player.animFrame + 1) % 4; player.animTimer = 0; }
-    } else player.animFrame = 0;
-
-    if (player.attackCooldown > 0) player.attackCooldown -= deltaTime;
-
-    if (!player.lastHungerDrop) player.lastHungerDrop = currentTime;
-    if (player.hunger > 0 && currentTime - player.lastHungerDrop >= 4000) {
-        player.hunger = Math.max(0, player.hunger - 1);
-        player.lastHungerDrop = currentTime;
-        updateStatusUI();
-    }
-
-    if (currentDifficulty.regenInterval > 0 && currentTime - player.lastHealthRegen >= currentDifficulty.regenInterval) {
-        if (player.health < 10) {
-            player.health = Math.min(10, player.health + currentDifficulty.regenAmount);
-            updateStatusUI();
-        }
-        player.lastHealthRegen = currentTime;
-    }
-
-    if (player.hunger <= 0) triggerGameOver(LANG[currentLang].youStarved);
-    if (player.y > WORLD_HEIGHT * BLOCK_SIZE) triggerGameOver(LANG[currentLang].youFell);
-
-    camera.x = player.x - canvas.width / 2 + player.w / 2;
-    camera.y = player.y - canvas.height / 2 + player.h / 2;
-
-    if (damageCooldown > 0) damageCooldown -= deltaTime;
 }
 
-// ========== 渲染（修改：Bob绿眼睛+紫衣服，Undead Crews蓝眼睛+红衣服） ==========
-function drawSteve(x, y) {
+function updatePlagueDoctor(){
+    if(!plagueDoctor.spawned||isPaused)return;
+    let tx = player.x - 3 * BLOCK_SIZE;
+    plagueDoctor.vx = 0;
+    let dx = tx - plagueDoctor.x;
+    if (Math.abs(dx) > 10) {
+        plagueDoctor.vx = dx > 0 ? plagueDoctor.speed : -plagueDoctor.speed;
+    }
+    plagueDoctor.vy += GRAVITY;
+    let nx = plagueDoctor.x + plagueDoctor.vx;
+    let ny = plagueDoctor.y + plagueDoctor.vy;
+    if (!checkCollision(nx, plagueDoctor.y, plagueDoctor.w, plagueDoctor.h)) {
+        plagueDoctor.x = nx;
+    }
+    if (!checkCollision(plagueDoctor.x, ny, plagueDoctor.w, plagueDoctor.h)) {
+        plagueDoctor.y = ny;
+    } else {
+        if (plagueDoctor.vy > 0) plagueDoctor.onGround = true;
+        plagueDoctor.vy = 0;
+    }
+    plagueDoctor.animTimer += 16;
+    if (plagueDoctor.animTimer > 100) {
+        plagueDoctor.animFrame = (plagueDoctor.animFrame + 1) % 4;
+        plagueDoctor.animTimer = 0;
+    }
+}
+
+function checkDoctorInteraction(){
+    if(!plagueDoctor.spawned||isPaused)return;
+    let d=Math.hypot(plagueDoctor.x-player.x,plagueDoctor.y-player.y);
+    if(d<BLOCK_SIZE*4&&keys['f']){openDoctorDialogue();keys['f']=false;}
+}
+
+function drawKnight(x, y) {
+    const s = BLOCK_SIZE / 16;
+    const isLeft = player.vx < 0;
+    ctx.save();
+    if (isLeft) { ctx.scale(-1, 1); x = -x - player.w; }
+    
+    ctx.fillStyle = '#C0C0C0';
+    ctx.fillRect(x, y, 16*s, 16*s);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(x+2*s, y+2*s, 12*s, 2*s);
+    ctx.fillRect(x+2*s, y+12*s, 12*s, 2*s);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x+4*s, y+6*s, 8*s, 3*s);
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(x+7*s, y+3*s, 2*s, 10*s);
+    ctx.fillRect(x+5*s, y+7*s, 6*s, 2*s);
+    
+    ctx.fillStyle = '#C0C0C0';
+    ctx.fillRect(x+2*s, y+16*s, 12*s, 12*s);
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(x+6*s, y+18*s, 4*s, 8*s);
+    ctx.fillRect(x+4*s, y+20*s, 8*s, 4*s);
+    
+    ctx.fillStyle = '#C0C0C0';
+    ctx.fillRect(x, y+16*s, 4*s, 12*s);
+    ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    
+    const off = [0, 3, 0, -3][player.animFrame] * s;
+    ctx.fillStyle = '#C0C0C0';
+    ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s + off);
+    ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s - off);
+    
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x+4*s, y+40*s + off, 4*s, 4*s);
+    ctx.fillRect(x+8*s, y+40*s - off, 4*s, 4*s);
+    
+    ctx.fillStyle = '#8B0000';
+    ctx.fillRect(x+14*s, y+16*s, 4*s, 20*s);
+    
+    ctx.restore();
+}
+function drawZombie(x, y, w, h, mob) {
+    const s = w / 16;
+    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y, 16*s, 16*s);
+    ctx.fillStyle = '#0000FF'; ctx.fillRect(x+3*s, y+6*s, 3*s, 3*s); ctx.fillRect(x+10*s, y+6*s, 3*s, 3*s);
+    ctx.fillStyle = '#FF0000'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
+    ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
+    ctx.fillStyle = '#1A237E'; ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s); ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s);
+}
+
+function drawPlagueDoctor(x, y, w, h) {
+    const s = w / 16;
+    ctx.fillStyle = '#000000'; 
+    ctx.fillRect(x+2*s, y, 12*s, 16*s);
+    ctx.fillRect(x, y+16*s, 16*s, 24*s);
+    ctx.fillStyle = '#d4af37';
+    ctx.fillRect(x+4*s, y+6*s, 8*s, 8*s);
+    ctx.fillRect(x+6*s, y+10*s, 4*s, 12*s);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x+5*s, y+7*s, 2*s, 2*s);
+    ctx.fillRect(x+9*s, y+7*s, 2*s, 2*s);
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(x-1*s, y+20*s, 2*s, 20*s);
+    ctx.font = `${8*s}px Arial`;
+    ctx.fillText('🐦‍⬛', x+6*s, y-2*s);
+}
+
+function drawLucas(x, y) {
     const s = BLOCK_SIZE / 16;
     const isLeft = player.vx < 0;
     ctx.save();
     if (isLeft) { ctx.scale(-1, 1); x = -x - player.w; }
     ctx.fillStyle = '#5D3A1A'; ctx.fillRect(x, y, 16*s, 16*s);
-    ctx.fillStyle = '#F5C096'; ctx.fillRect(x+2*s, y+2*s, 12*s, 12*s); // 恢复原皮肤色
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x+2*s, y+2*s, 12*s, 12*s);
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x+4*s, y+6*s, 2*s, 2*s); ctx.fillRect(x+10*s, y+6*s, 2*s, 2*s);
-    ctx.fillStyle = '#32CD32'; ctx.fillRect(x+5*s, y+7*s, 1*s, 1*s); ctx.fillRect(x+11*s, y+7*s, 1*s, 1*s); // 绿色眼睛
-    ctx.fillStyle = '#5500AA'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s); // 紫色衣服
-    ctx.fillStyle = '#F5C096'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s); // 恢复原手臂色
+    ctx.fillStyle = '#32CD32'; ctx.fillRect(x+5*s, y+7*s, 1*s, 1*s); ctx.fillRect(x+11*s, y+7*s, 1*s, 1*s);
+    ctx.fillStyle = '#5500AA'; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
+    ctx.fillStyle = '#F5C096'; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
     const off = [0, 3, 0, -3][player.animFrame] * s;
     ctx.fillStyle = '#1A237E';
     ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s + off);
@@ -497,548 +860,328 @@ function drawSteve(x, y) {
     ctx.fillRect(x+4*s, y+40*s + off, 4*s, 4*s);
     ctx.fillRect(x+8*s, y+40*s - off, 4*s, 4*s);
     ctx.restore();
-}
 
-// 僵尸：Undead Crews，蓝眼睛+红衣服
-function drawZombie(x, y, w, h, mob) {
-    const s = w / 16;
-    // 彩蛋：第3天夜晚的特殊僵尸是金色的
-    const isSpecial = mob && mob.isSpecial;
-    const headColor = isSpecial ? '#FFD700' : '#2E7D32';
-    const shirtColor = isSpecial ? '#FFD700' : '#FF0000'; // 红色衣服
-    const eyeColor = isSpecial ? '#FF0000' : '#0000FF'; // 蓝色眼睛
-    
-    ctx.fillStyle = headColor; ctx.fillRect(x, y, 16*s, 16*s);
-    ctx.fillStyle = eyeColor; ctx.fillRect(x+3*s, y+6*s, 3*s, 3*s); ctx.fillRect(x+10*s, y+6*s, 3*s, 3*s);
-    ctx.fillStyle = shirtColor; ctx.fillRect(x+4*s, y+16*s, 8*s, 12*s);
-    ctx.fillStyle = headColor; ctx.fillRect(x, y+16*s, 4*s, 12*s); ctx.fillRect(x+12*s, y+16*s, 4*s, 12*s);
-    ctx.fillStyle = '#1A237E'; ctx.fillRect(x+4*s, y+28*s, 4*s, 12*s); ctx.fillRect(x+8*s, y+28*s, 4*s, 12*s);
-}
-
-// ========== 鼠标交互 ==========
-function getBlockAtMouse() {
-    const rect = canvas.getBoundingClientRect();
-    const mx = mouse.x - rect.left;
-    const my = mouse.y - rect.top;
-    const wx = Math.floor((mx + camera.x) / BLOCK_SIZE);
-    const wy = Math.floor((my + camera.y) / BLOCK_SIZE);
-    return { x: wx, y: wy, block: world[wx]?.[wy] || null };
-}
-
-function getMobAtMouse() {
-    const rect = canvas.getBoundingClientRect();
-    const wx = mouse.x - rect.left + camera.x;
-    const wy = mouse.y - rect.top + camera.y;
-    for (let i = 0; i < mobs.length; i++) {
-        const m = mobs[i];
-        if (wx >= m.x && wx <= m.x + m.w && wy >= m.y && wy <= m.y + m.h) return { mob: m, index: i };
+    if(boss && !currentDifficulty.isInfinity){
+        const barWidth = BLOCK_SIZE * 2;
+        const barHeight = 8;
+        const barX = x - barWidth/2 + (16*s)/2;
+        const barY = y - 20;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        ctx.fillStyle = '#ff0000';
+        const currentWidth = (boss.health / boss.maxHealth) * barWidth;
+        ctx.fillRect(barX, barY, currentWidth, barHeight);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.ceil(boss.health)}/${boss.maxHealth}`, barX + barWidth/2, barY - 2);
     }
-    return null;
 }
 
-function placeBlockAtMouse() {
-    if (isGameOver || gameState !== 'playing') return;
-    const t = getBlockAtMouse();
-    if (!t.block || t.block.id !== BLOCK_TYPES.AIR.id) return;
-    const item = player.hotbar[player.selectedHotbar];
-    const bt = BLOCK_TYPES[item?.type];
-    if (!bt || !bt.solid || !item || item.count <= 0) return;
-    
-    world[t.x][t.y] = BLOCK_TYPES.PLACED;
-    item.count -= 1;
-    if (item.count <= 0) player.hotbar[player.selectedHotbar] = null;
-    updateHotbarUI();
+function spawnInfinityLucas() {
+    let x = player.x + (Math.random() > 0.5 ? -500 : 500);
+    let groundY = findGroundY(x);
+    mobs.push({
+        x: x, y: groundY - BLOCK_SIZE*2.5, w: BLOCK_SIZE*1.5, h: BLOCK_SIZE*2.5,
+        speed: 3, health: 60, vy: 0, vx: 0, onGround: false, lastAttackTime: 0, damage: 2, isLucasMinion: true
+    });
 }
 
-function handleMouseInteraction() {
-    if (isGameOver || gameState !== 'playing') return;
-    if (mouse.button === 1) {
-        const tm = getMobAtMouse();
-        if (tm) {
-            const m = tm.mob;
-            const d = Math.hypot((m.x + m.w/2) - (player.x + player.w/2), (m.y + m.h/2) - (player.y + player.h/2));
-            if (d <= ATTACK_RANGE && player.attackCooldown <= 0) {
-                m.health -= 1;
-                player.attackCooldown = 300;
-                if (m.health <= 0) {
-                    // 彩蛋：特殊僵尸掉落双倍肉
-                    const meatCount = m.isSpecial ? 2 : 1;
-                    for(let i=0; i<meatCount; i++) {
-                        droppedItems.push({ 
-                            x: m.x + Math.random()*20, 
-                            y: m.y, 
-                            w: BLOCK_SIZE/2, 
-                            h: BLOCK_SIZE/2, 
-                            type: 'RAW_ZOMBIE_MEAT', 
-                            lifeTime: ITEM_LIFETIME 
-                        });
-                    }
-                    if(m.isSpecial) showStoryPopup("You defeated the special Undead Crew! Double loot!", 2000);
-                    mobs.splice(tm.index, 1);
-                }
-            }
-            mouse.button = 0;
-            return;
+function handleSwordAttack() {
+    if(player.attackCooldown>0||isPaused)return;
+    player.attackCooldown=300;
+
+    const attackX = player.x - BLOCK_SIZE;
+    const attackY = player.y - BLOCK_SIZE*0.5;
+    const attackW = BLOCK_SIZE * 5;
+    const attackH = BLOCK_SIZE * 3;
+
+    let b = getBlockAtMouse();
+    if(world[b.x]&&world[b.x][b.y]&&world[b.x][b.y]===BLOCK_TYPES.LEAVES){
+        world[b.x][b.y]=BLOCK_TYPES.AIR;
+        if(Math.random() < BLOCK_TYPES.LEAVES.dropChance){
+            droppedItems.push({
+                x:b.x*BLOCK_SIZE,y:b.y*BLOCK_SIZE,w:BLOCK_SIZE/2,h:BLOCK_SIZE/2,
+                type:'CHERRY',lifeTime:ITEM_LIFETIME
+            });
         }
-        
-        const tb = getBlockAtMouse();
-        if (!tb.block || tb.block.id === BLOCK_TYPES.AIR.id) { mouse.button = 0; return; }
-        const d = Math.hypot((tb.x * BLOCK_SIZE + BLOCK_SIZE/2) - (player.x + player.w/2), (tb.y * BLOCK_SIZE + BLOCK_SIZE/2) - (player.y + player.h/2));
-        if (d > BLOCK_SIZE * 6) { mouse.button = 0; return; }
+    }
 
-        const dt = tb.block.drop;
-        if (dt) {
-            for (let i = 0; i < player.hotbar.length; i++) {
-                if (player.hotbar[i]?.type === dt && player.hotbar[i].count < 64) {
-                    player.hotbar[i].count += 1;
-                    updateHotbarUI();
-                    break;
-                } else if (!player.hotbar[i]) {
-                    player.hotbar[i] = { type: dt, count: 1 };
-                    updateHotbarUI();
-                    break;
-                }
-            }
+    for(let i=mobs.length-1;i>=0;i--){
+        let m=mobs[i];
+        if(
+            m.x + m.w > attackX &&
+            m.x < attackX + attackW &&
+            m.y + m.h > attackY &&
+            m.y < attackY + attackH
+        ){
+            m.health -= player.attackDamage;
+            if(m.health<=0) mobs.splice(i,1);
         }
-        world[tb.x][tb.y] = BLOCK_TYPES.AIR;
-        mouse.button = 0;
     }
-}
-
-// ========== 掉落物系统 ==========
-function updateDroppedItems(deltaTime) {
-    if (gameState !== 'playing') return;
-    for (let i = droppedItems.length - 1; i >= 0; i--) {
-        const item = droppedItems[i];
-        item.lifeTime -= deltaTime;
-        const d = Math.hypot((item.x + item.w/2) - (player.x + player.w/2), (item.y + item.h/2) - (player.y + player.h/2));
-        if (d < BLOCK_SIZE * 1.5) {
-            if (FOOD_TYPES[item.type]) {
-                player.hunger = Math.min(10, player.hunger + FOOD_TYPES[item.type].hungerRestore);
-                if (player.health < 10) player.health = Math.min(10, player.health + FOOD_TYPES[item.type].healthRestore);
-                updateStatusUI();
-            }
-            droppedItems.splice(i, 1);
-            continue;
+    if(boss){
+        if(
+            boss.x + boss.w > attackX &&
+            boss.x < attackX + attackW &&
+            boss.y + boss.h > attackY &&
+            boss.y < attackY + attackH
+        ){
+            boss.health -= player.attackDamage;
         }
-        if (item.lifeTime <= 0) droppedItems.splice(i, 1);
     }
 }
 
-function renderDroppedItems() {
-    if (gameState !== 'playing') return;
-    for (const item of droppedItems) {
-        const sx = item.x - camera.x;
-        const sy = item.y - camera.y;
-        ctx.fillStyle = FOOD_TYPES[item.type]?.color || '#8B4513';
-        ctx.fillRect(sx, sy, item.w, item.h);
-        ctx.strokeStyle = '#000';
-        ctx.strokeRect(sx, sy, item.w, item.h);
+function getBlockAtMouse(){
+    let wx=Math.floor((mouse.x+camera.x)/BLOCK_SIZE);
+    let wy=Math.floor((mouse.y+camera.y)/BLOCK_SIZE);
+    return{x:wx,y:wy};
+}
+
+function updateDroppedItems(dt){
+    for(let i=droppedItems.length-1;i>=0;i--){
+        let it=droppedItems[i];
+        it.lifeTime-=dt;
+        let d=Math.hypot(it.x+it.w/2-(player.x+player.w/2),it.y+it.h/2-(player.y+player.h/2));
+        if(d<BLOCK_SIZE*1.5){
+            if(it.type==='CHERRY')backpack.cherry++;
+            droppedItems.splice(i,1);
+        }
+        if(it.lifeTime<=0)droppedItems.splice(i,1);
     }
 }
 
-// ========== UI更新 ==========
+function renderDroppedItems(){
+    for(let it of droppedItems){
+        ctx.fillStyle=FOOD_TYPES[it.type].color;
+        ctx.beginPath();ctx.arc(it.x-camera.x+it.w/2,it.y-camera.y+it.h/2,it.w/2,0,Math.PI*2);ctx.fill();
+    }
+}
+
 function updateStatusUI() {
     if (gameState !== 'playing') return;
     let hh = '', hu = '';
-    for(let i=0;i<10;i++) hh += `<div class="heart ${i<player.health?'':'empty'}"></div>`;
+    for(let i=0;i<player.maxHealth;i++) hh += `<div class="heart ${i<player.health?'':'empty'}"></div>`;
     for(let i=0;i<10;i++) hu += `<div class="hunger ${i<player.hunger?'':'empty'}"></div>`;
     document.getElementById('healthContainer').innerHTML = hh;
     document.getElementById('hungerContainer').innerHTML = hu;
 }
 
-function updateHotbarUI() {
-    if (gameState !== 'playing') return;
-    const slots = document.querySelectorAll('.hotbar-slot');
-    slots.forEach((slot, index) => {
-        const item = player.hotbar[index];
-        const countEl = slot.querySelector('.item-count');
-        const previewEl = slot.querySelector('.block-preview');
-        if (item) {
-            countEl.textContent = item.count;
-            previewEl.style.backgroundColor = BLOCK_TYPES[item.type]?.color || '#FFFFFF';
-        } else {
-            countEl.textContent = '';
-            previewEl.style.backgroundColor = 'transparent';
-        }
-    });
-}
-
-function selectHotbarSlot(index) {
-    if (gameState !== 'playing' || index < 0 || index >= 9) return;
-    player.selectedHotbar = index;
-    document.querySelectorAll('.hotbar-slot').forEach(slot => slot.classList.remove('selected'));
-    document.querySelector(`[data-slot="${index}"]`).classList.add('selected');
-}
-
-// ========== 优化：僵尸生成（含第3天特殊彩蛋） ==========
-function spawnZombie() {
-    const max = isNightTime() ? currentDifficulty.maxZombies * 2 : currentDifficulty.maxZombies;
-    if (mobs.length >= max) return;
-    const side = Math.random() > 0.5 ? 'left' : 'right';
-    const sx = side === 'left' ? player.x - 500 : player.x + 500;
-    
-    // 彩蛋：第3天夜晚20%概率生成特殊僵尸
-    const isSpecial = currentDay === 3 && isNightTime() && Math.random() < 0.2;
-    
+function spawnZombie(){
+    if(!isNightTime()||mobs.length>=currentDifficulty.maxZombies||isPaused)return;
+    let x=player.x+(Math.random()>0.5?-400:400);
+    let groundY = findGroundY(x);
     mobs.push({
-        x: Math.max(WORLD_LEFT_BOUND, Math.min(WORLD_RIGHT_BOUND - BLOCK_SIZE, sx)),
-        y: 10 * BLOCK_SIZE, w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 1.8,
-        speed: 2.2, health: isSpecial ? currentDifficulty.zombieHealth * 2 : currentDifficulty.zombieHealth, 
-        vy: 0, onGround: false, lastJump: 0,
-        lastAttackTime: 0, // 新增：每个僵尸独立攻击冷却
-        isSpecial: isSpecial, // 彩蛋标记
-        name: isSpecial ? "Golden Undead Crew" : "Undead Crews"
+        x:x,y:groundY - BLOCK_SIZE*1.8,w:BLOCK_SIZE*0.8,h:BLOCK_SIZE*1.8,
+        speed:2.2,health:currentDifficulty.zombieHealth,vy:0,vx:0,onGround:false,lastAttackTime:0
     });
 }
 
-// ========== 优化：僵尸AI（不卡+群殴伤害） ==========
-function updateMobs(deltaTime) {
-    if (gameState !== 'playing') return;
-    for (let i = mobs.length - 1; i >= 0; i--) {
-        const mob = mobs[i];
-        
-        if (!mob.lastJump) mob.lastJump = 0;
-        if (!mob.lastAttackTime) mob.lastAttackTime = 0;
+function spawnBoss(){
+    boss={
+        x:player.x+800,y:10*BLOCK_SIZE,w:BLOCK_SIZE*1.5,h:BLOCK_SIZE*2.5,
+        speed:3,health:80,maxHealth:80,vy:0,vx:0,onGround:false,lastAttackTime:0,damage:2
+    };
+}
 
-        const dir = player.x < mob.x ? -1 : 1;
-        let nx = mob.x + dir * mob.speed;
+function updateMobs(dt, ts){
+    for(let i=mobs.length-1;i>=0;i--){
+        let m=mobs[i];
+        if(m.health <= 0) continue;
 
-        mob.vy += GRAVITY;
-        let ny = mob.y + mob.vy;
-        
-        mob.onGround = false;
-        if (!checkCollision(mob.x, ny, mob.w, mob.h)) {
-            mob.y = ny;
+        m.vy += GRAVITY;
+        let dir = player.x < m.x ? -1 : 1;
+        m.vx = dir * (m.isLucasMinion ? 3 : 2.2);
+
+        if(!checkCollision(m.x + m.vx, m.y, m.w, m.h)) m.x += m.vx;
+        if(!checkCollision(m.x, m.y + m.vy, m.w, m.h)){
+            m.y += m.vy;
         } else {
-            if (mob.vy > 0) mob.onGround = true;
-            mob.vy = 0;
-        }
-
-        if (!checkCollision(nx, mob.y, mob.w, mob.h)) {
-            mob.x = nx;
-        } else {
-            if (mob.onGround && Date.now() - mob.lastJump > 600) {
-                mob.vy = -11;
-                mob.lastJump = Date.now();
+            if(m.vy > 0) m.onGround = true;
+            m.vy = 0;
+            if(Math.random() < 0.015){
+                m.vy = -11;
+                m.onGround = false;
             }
         }
 
-        // 优化：每个僵尸独立攻击冷却，实现群殴效果
-        const dx = Math.abs(mob.x - player.x);
-        const dy = Math.abs(mob.y - player.y);
-        const now = Date.now();
-        if (dx < 24 && dy < 40 && now - mob.lastAttackTime > 800) { // 每个僵尸攻击间隔800ms
-            player.health--;
-            playHurtSound();
-            mob.lastAttackTime = now;
+        const playerCenterX = player.x + player.w/2;
+        const mobCenterX = m.x + m.w/2;
+        const playerCenterY = player.y + player.h/2;
+        const mobCenterY = m.y + m.h/2;
+        const horizontalDist = Math.abs(mobCenterX - playerCenterX);
+        const verticalDist = Math.abs(mobCenterY - playerCenterY);
+        
+        let attackRange = m.isLucasMinion ? BLOCK_SIZE*1.5 : BLOCK_SIZE*1;
+        if(horizontalDist < attackRange && verticalDist < BLOCK_SIZE*1.5 && Date.now()-m.lastAttackTime>1200){
+            player.health -= (m.isLucasMinion ? 2 : 1);
+            playSound('hurt');
             updateStatusUI();
-            if (player.health <= 0) {
-                triggerGameOver(LANG[currentLang].killedByZombie);
+            if(player.health<=0)triggerGameOver(m.isLucasMinion ? LANG[currentLang].killedByBoss : LANG[currentLang].killedByZombie);
+            m.lastAttackTime=Date.now();
+        }
+    }
+
+    if(boss&&boss.health>0&&!currentDifficulty.isInfinity){
+        boss.vy += GRAVITY;
+        let dir = player.x < boss.x ? -1 : 1;
+        boss.vx = dir * boss.speed;
+
+        if(!checkCollision(boss.x + boss.vx, boss.y, boss.w, boss.h)) boss.x += boss.vx;
+        if(!checkCollision(boss.x, boss.y + boss.vy, boss.w, boss.h)){
+            boss.y += boss.vy;
+        } else {
+            if(boss.vy > 0) boss.onGround = true;
+            boss.vy = 0;
+            if(Math.random() < 0.02){
+                boss.vy = -12;
+                boss.onGround = false;
             }
         }
-        
-        if (mob.y > 1000) mobs.splice(i, 1);
+
+        let d=Math.hypot(boss.x-player.x,boss.y-player.y);
+        if(d<60&&Date.now()-boss.lastAttackTime>1000){
+            player.health-=boss.damage;
+            playSound('hurt');
+            updateStatusUI();
+            if(player.health<=0)triggerGameOver(LANG[currentLang].killedByBoss);
+            boss.lastAttackTime=Date.now();
+        }
+
+        if(boss.health <= 40 && !isBossSummoning) isBossSummoning = true;
+        if(isBossSummoning && !isPaused && ts - lastBossSummonTime > 3000){
+            spawnZombie();spawnZombie();
+            lastBossSummonTime = ts;
+        }
     }
+
+    if(boss&&boss.health<=0&&!bossDefeated&&!currentDifficulty.isInfinity){bossDefeated=true;triggerVictory();}
 }
 
-// ========== 胜利系统 ==========
-function updateVictoryTimer(deltaTime) {
-    if (gameState !== 'playing' || currentDifficulty.victoryTime === 0) return;
-    survivalTime += deltaTime;
-    const left = currentDifficulty.victoryTime - survivalTime;
-    const m = Math.floor(left / 60000);
-    const s = Math.floor((left % 60000) / 1000);
-    document.getElementById('victoryTimer').innerHTML = `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    
-    if (survivalTime >= currentDifficulty.victoryTime) {
-        triggerVictory();
-    }
+function triggerGameOver(reason){
+    isGameOver=true;gameState='gameover';
+    document.getElementById('overlayTitle').innerHTML=LANG[currentLang].gameOver;
+    document.getElementById('overlaySubtitle').innerHTML=reason;
+    document.getElementById('gameOverlay').style.display='flex';
 }
 
-// ========== 游戏结束/胜利 ==========
-function triggerGameOver(reason) {
-    if (isGameOver) return;
-    isGameOver = true;
-    gameState = 'gameover';
-    document.getElementById('overlayTitle').innerHTML = LANG[currentLang].gameOver;
-    document.getElementById('overlayTitle').style.color = '#ff0000';
-    document.getElementById('overlaySubtitle').innerHTML = reason;
-    document.getElementById('gameOverlay').style.display = 'flex';
+function triggerVictory(){
+    isGameOver=true;gameState='victory';
+    document.getElementById('overlayTitle').innerHTML=LANG[currentLang].success;
+    document.getElementById('overlaySubtitle').innerHTML=LANG[currentLang].youSurvived;
+    document.getElementById('gameOverlay').style.display='flex';
 }
 
-function triggerVictory() {
-    if (isGameOver) return;
-    isGameOver = true;
-    gameState = 'victory';
-    document.getElementById('overlayTitle').innerHTML = LANG[currentLang].success;
-    document.getElementById('overlayTitle').style.color = '#4CAF50';
-    document.getElementById('overlaySubtitle').innerHTML = LANG[currentLang].youSurvived;
-    document.getElementById('gameOverlay').style.display = 'flex';
+function respawnGame(){generateNewWorld();gameState='playing';}
+function backToDifficulty(){
+    gameState='difficulty';
+    document.getElementById('difficultyScreen').style.display='flex';
+    document.getElementById('gameOverlay').style.display='none';
+}
+function backToMainMenu(){
+    gameState='start';
+    document.getElementById('startScreen').style.display='flex';
+    document.getElementById('gameOverlay').style.display='none';
 }
 
-function respawnGame() {
-    window.speechSynthesis.cancel();
-    dayTime = 0;
-    survivalTime = 0;
-
-    document.getElementById('overlayTitle').style.color = '#ff0000';
-    gameState = 'playing';
-    generateNewWorld();
-    document.getElementById('statusBar').style.display = 'flex';
-    document.getElementById('hotbar').style.display = 'flex';
-    document.getElementById('crosshair').style.display = 'block';
-    document.getElementById('dayCounter').style.display = 'block';
-    document.getElementById('topRightUI').style.display = 'flex';
-}
-function backToDifficulty() {
-    gameState = 'difficulty';
-    isGameOver = false;
-
-    rulesCountdown = 10;
-    rulesCanStart = false;
-    dayTime = 0;
-    survivalTime = 0;
-
-    document.getElementById('gameOverlay').style.display = 'none';
-    document.getElementById('difficultyScreen').style.display = 'flex';
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('rulesScreen').style.display = 'none';
-    document.getElementById('statusBar').style.display = 'none';
-    document.getElementById('hotbar').style.display = 'none';
-    document.getElementById('crosshair').style.display = 'none';
-    
-    document.getElementById('dayCounter').style.display = 'none';
-    document.getElementById('victoryTimer').style.display = 'none';
-}
-
-function backToMainMenu() {
-    gameState = 'start';
-    isGameOver = false;
-
-    rulesCountdown = 10;
-    rulesCanStart = false;
-    dayTime = 0;
-    survivalTime = 0;
-
-    document.getElementById('gameOverlay').style.display = 'none';
-    document.getElementById('startScreen').style.display = 'flex';
-    document.getElementById('difficultyScreen').style.display = 'none';
-    document.getElementById('rulesScreen').style.display = 'none';
-    document.getElementById('statusBar').style.display = 'none';
-    document.getElementById('hotbar').style.display = 'none';
-    document.getElementById('crosshair').style.display = 'none';
-    
-    document.getElementById('dayCounter').style.display = 'none';
-    document.getElementById('victoryTimer').style.display = 'none';
-}
-
-// ========== 世界渲染（新增：简单光影/阴影） ==========
-function renderWorld() {
-    if (gameState === 'start' || gameState === 'difficulty' || gameState === 'rules') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-    }
-    
-    ctx.fillStyle = getSkyColor();
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const sx = Math.floor(camera.x / BLOCK_SIZE) - 2;
-    const ex = Math.floor((camera.x + canvas.width) / BLOCK_SIZE) + 2;
-    const sy = Math.floor(camera.y / BLOCK_SIZE) - 2;
-    const ey = Math.floor((camera.y + canvas.height) / BLOCK_SIZE) + 2;
-    for (let x = sx; x <= ex; x++) {
-        for (let y = sy; y <= ey; y++) {
-            const b = world[x]?.[y];
-            if (!b || b.id === BLOCK_TYPES.AIR.id) continue;
-            const px = x * BLOCK_SIZE - camera.x;
-            const py = y * BLOCK_SIZE - camera.y;
-            ctx.fillStyle = b.color;
-            ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
-            // 新增：简单阴影效果
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            ctx.fillRect(px + 2, py + 2, BLOCK_SIZE, BLOCK_SIZE);
-            ctx.strokeStyle = '#00000020';
-            ctx.strokeRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+function renderWorld(){
+    if(gameState==='start'||gameState==='difficulty'){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+    ctx.fillStyle=getSkyColor();ctx.fillRect(0,0,canvas.width,canvas.height);
+    let sx=Math.floor(camera.x/BLOCK_SIZE)-2,ex=Math.floor((camera.x+canvas.width)/BLOCK_SIZE)+2;
+    let sy=Math.floor(camera.y/BLOCK_SIZE)-2,ey=Math.floor((camera.y+canvas.height)/BLOCK_SIZE)+2;
+    for(let x=sx;x<=ex;x++){
+        for(let y=sy;y<=ey;y++){
+            let b=world[x]&&world[x][y];
+            if(!b||b===BLOCK_TYPES.AIR)continue;
+            ctx.fillStyle=b.color;
+            ctx.fillRect(x*BLOCK_SIZE-camera.x,y*BLOCK_SIZE-camera.y,BLOCK_SIZE,BLOCK_SIZE);
         }
     }
     renderDroppedItems();
-    for (const m of mobs) drawZombie(m.x - camera.x, m.y - camera.y, m.w, m.h, m);
-    drawSteve(player.x - camera.x, player.y - camera.y);
+    drawPlagueDoctor(plagueDoctor.x-camera.x,plagueDoctor.y-camera.y,plagueDoctor.w,plagueDoctor.h);
+    mobs.forEach(m=>m.isLucasMinion ? drawLucas(m.x-camera.x,m.y-camera.y) : drawZombie(m.x-camera.x,m.y-camera.y,m.w,m.h,m));
+    if(boss&&!currentDifficulty.isInfinity)drawLucas(boss.x-camera.x,boss.y-camera.y);
+    drawKnight(player.x-camera.x,player.y-camera.y);
 }
 
-// ========== 规则倒计时 ==========
-let rulesSecondTimer = 0;
-function updateRulesCountdown(deltaTime) {
-    if (gameState !== 'rules' || rulesCanStart) return;
-    rulesSecondTimer += deltaTime;
-    if (rulesSecondTimer >= 1000) {
-        rulesSecondTimer -= 1000;
-        rulesCountdown--;
+function gameLoop(ts){
+    if(!lastTimestamp)lastTimestamp=ts;
+    let dt=ts-lastTimestamp;lastTimestamp=ts;
+    if(!isPaused&&gameState==='playing'){
+        updateDayNightCycle(dt);
+        updatePlayer(dt,ts);
+        updatePlagueDoctor();
+        updateMobs(dt, ts);
+        updateDroppedItems(dt);
+        if (ts - lastZombieSpawnTime > 3000) {
+            spawnZombie();
+            lastZombieSpawnTime = ts;
+        }
+        if(mouse.button===1){handleSwordAttack();mouse.button=0;}
     }
-    if (rulesCountdown <= 0) {
-        rulesCountdown = 0;
-        rulesCanStart = true;
-        document.getElementById('rulesCountdown').style.display = 'none';
-        document.getElementById('rulesStartPrompt').style.display = 'block';
-    } else {
-        document.getElementById('rulesCountdown').innerHTML = rulesCountdown;
-    }
-}
-
-// ========== UI文字更新 ==========
-function updateAllUIText() {
-    document.getElementById('startTitle').innerText = LANG[currentLang].startTitle;
-    document.getElementById('startSubtitle').innerText = LANG[currentLang].startSubtitle;
-    document.getElementById('startPrompt').innerText = LANG[currentLang].startPrompt;
-    document.getElementById('startInspired').innerText = LANG[currentLang].startInspired;
-    document.getElementById('exitBtnMenu').innerText = LANG[currentLang].exitBtnMenu;
-    document.getElementById('difficultyTitle').innerText = LANG[currentLang].difficultyTitle;
-    document.getElementById('easyBtn').innerText = LANG[currentLang].easy;
-    document.getElementById('normalBtn').innerText = LANG[currentLang].normal;
-    document.getElementById('hardBtn').innerText = LANG[currentLang].hard;
-    document.getElementById('extremeBtn').innerText = LANG[currentLang].extreme;
-    document.getElementById('infinityBtn').innerText = LANG[currentLang].infinity;
-    document.getElementById('rulesTitle').innerText = LANG[currentLang].rulesTitle;
-    document.getElementById('rulesContent').innerHTML = LANG[currentLang].rulesContent;
-    document.getElementById('rulesStartPrompt').innerText = LANG[currentLang].rulesStartPrompt;
-    document.getElementById('overlayHint').innerText = LANG[currentLang].controlHint;
-    document.getElementById('langToggle').innerText = currentLang === 'en' ? 'EN' : '中';
-    document.getElementById('dayCounter').innerHTML = LANG[currentLang].day + currentDay;
-}
-
-// ========== 难度按钮 ==========
-function setupDifficultyButtons() {
-    document.getElementById('easyBtn').onclick = () => { currentDifficulty = DIFFICULTY.EASY; toRulesScreen(); };
-    document.getElementById('normalBtn').onclick = () => { currentDifficulty = DIFFICULTY.NORMAL; toRulesScreen(); };
-    document.getElementById('hardBtn').onclick = () => { currentDifficulty = DIFFICULTY.HARD; toRulesScreen(); };
-    document.getElementById('extremeBtn').onclick = () => { currentDifficulty = DIFFICULTY.EXTREME; toRulesScreen(); };
-    document.getElementById('infinityBtn').onclick = () => { currentDifficulty = DIFFICULTY.INFINITY; toRulesScreen(); };
-}
-
-function toRulesScreen() {
-    gameState = 'rules';
-    rulesCountdown = 10;
-    rulesCanStart = false;
-    document.getElementById('difficultyScreen').style.display = 'none';
-    document.getElementById('rulesScreen').style.display = 'flex';
-    document.getElementById('rulesCountdown').style.display = 'block';
-    document.getElementById('rulesStartPrompt').style.display = 'none';
-}
-
-function startGame() {
-    if (!rulesCanStart) return;
-    gameState = 'playing';
-    document.getElementById('rulesScreen').style.display = 'none';
-    document.getElementById('statusBar').style.display = 'flex';
-    document.getElementById('hotbar').style.display = 'flex';
-    document.getElementById('crosshair').style.display = 'block';
-    document.getElementById('dayCounter').style.display = 'block';
-    document.getElementById('topRightUI').style.display = 'flex';
-    document.getElementById('victoryTimer').style.display = currentDifficulty.victoryTime > 0 ? 'block' : 'none';
-    generateNewWorld();
-}
-
-// ========== 主游戏循环 ==========
-function gameLoop(timestamp) {
-    const deltaTime = timestamp - lastTimestamp || 0;
-    lastTimestamp = timestamp;
-    
-    updateRulesCountdown(deltaTime);
-    updateDayNightCycle(deltaTime);
-    updateVictoryTimer(deltaTime);
-    
-    updatePlayer(deltaTime, timestamp);
-    handleMouseInteraction();
-    updateDroppedItems(deltaTime);
-    updateMobs(deltaTime);
-    
-    const spawnInterval = isNightTime() ? 2000 : 4000;
-    if (Date.now() - lastZombieSpawnTime > spawnInterval) {
-        spawnZombie();
-        if (isNightTime() && Math.random() < 0.5) spawnZombie();
-        lastZombieSpawnTime = Date.now();
-    }
-    
     renderWorld();
     requestAnimationFrame(gameLoop);
 }
 
-// ========== 事件监听（修复：游戏中按R不重启） ==========
-window.addEventListener('keydown', (e) => {
-    if (gameState === 'start' && (e.key === 'e' || e.key === 'E')) {
-        gameState = 'difficulty';
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('difficultyScreen').style.display = 'flex';
+// 键盘事件
+window.addEventListener('keydown',e=>{
+    keys[e.key]=true;
+    if(e.key==='Escape')closeDialogue();
+    // T键关闭待机画面
+    if((e.key==='t'||e.key==='T') && showLucasStandby){
+        startGameAfterStandby();
         return;
     }
-    if (gameState === 'rules' && rulesCanStart) { startGame(); return; }
-    if (gameState === 'playing') {
-        keys[e.key] = true;
-        if (e.key >= '1' && e.key <= '9') selectHotbarSlot(parseInt(e.key) - 1);
-        // 修复：移除游戏中按R重启
-        if (e.key === 't' || e.key === 'T') placeBlockAtMouse();
+    if(e.key==='e'||e.key==='E'){
+        if(gameState==='start'){
+            document.getElementById('startScreen').style.display='none';
+            document.getElementById('difficultyScreen').style.display='flex';gameState='difficulty';
+        }else if(gameState==='playing')toggleBackpack();
     }
-    // 仅在gameover或victory时响应R/H/T
-    if ((gameState === 'gameover' || gameState === 'victory') && e.key === 'r') respawnGame();
-    if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 'h' || e.key === 'H')) backToDifficulty();
-    if ((gameState === 'gameover' || gameState === 'victory') && (e.key === 't' || e.key === 'T')) backToMainMenu();
+    if(e.key==='r'&&(gameState==='gameover'||gameState==='victory'))respawnGame();
+    if(e.key==='h'&&(gameState==='gameover'||gameState==='victory'))backToDifficulty();
+    if(e.key==='t'&&(gameState==='gameover'||gameState==='victory'))backToMainMenu();
 });
-
-window.addEventListener('keyup', (e) => { if (gameState === 'playing') keys[e.key] = false; });
-
-window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-    document.getElementById('crosshair').style.left = `${e.clientX}px`;
-    document.getElementById('crosshair').style.top = `${e.clientY}px`;
+window.addEventListener('keyup',e=>keys[e.key]=false);
+canvas.addEventListener('mousemove',e=>{
+    mouse.x=e.clientX;mouse.y=e.clientY;
+    document.getElementById('crosshair').style.left=e.clientX+'px';
+    document.getElementById('crosshair').style.top=e.clientY+'px';
 });
+canvas.addEventListener('mousedown',e=>{if(e.button===0)mouse.button=1;});
+canvas.addEventListener('mouseup',e=>{if(e.button===0)mouse.button=0;});
 
-window.addEventListener('mousedown', (e) => {
-    if (gameState === 'rules' && rulesCanStart) { startGame(); return; }
-    if (gameState === 'playing') mouse.button = e.which;
-});
+// 语言/声音切换
+document.getElementById('langToggle').onclick=()=>{
+    currentLang=currentLang==='en'?'zh':'en';
+    document.getElementById('langToggle').innerText=currentLang==='en'?'EN':'中';
+};
+document.getElementById('soundToggle').onclick=()=>{
+    soundMuted=!soundMuted;
+    document.getElementById('soundToggle').innerText=soundMuted?'🔇':'🔊';
+};
+document.getElementById('exitBtnMenu').onclick=()=>window.close();
 
-window.addEventListener('mouseup', () => { if (gameState === 'playing') mouse.button = 0; });
-window.addEventListener('contextmenu', (e) => e.preventDefault());
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    if (gameState === 'playing') { camera.x = player.x - canvas.width / 2 + player.w / 2; camera.y = player.y - canvas.height / 2 + player.h / 2; }
-});
-
-document.querySelectorAll('.hotbar-slot').forEach(slot => {
-    slot.onclick = () => selectHotbarSlot(parseInt(slot.dataset.slot));
-});
-
-document.getElementById('exitBtnMenu').onclick = () => { window.close(); };
-
-document.getElementById('langToggle').onclick = () => {
-    currentLang = currentLang === 'en' ? 'zh' : 'en';
-    updateAllUIText();
+// 难度选择
+document.getElementById('normalBtn').onclick=()=>{
+    currentDifficulty=DIFFICULTY.NORMAL;
+    gameState='playing';
+    document.getElementById('difficultyScreen').style.display='none';
+    showLucasStandbyScreen();
+};
+document.getElementById('hardBtn').onclick=()=>{
+    currentDifficulty=DIFFICULTY.HARD;
+    gameState='playing';
+    document.getElementById('difficultyScreen').style.display='none';
+    showLucasStandbyScreen();
+};
+document.getElementById('infinityBtn').onclick=()=>{
+    currentDifficulty=DIFFICULTY.INFINITY;
+    gameState='playing';
+    document.getElementById('difficultyScreen').style.display='none';
+    generateNewWorld();
 };
 
-document.getElementById('soundToggle').onclick = () => {
-    soundMuted = !soundMuted;
-    document.getElementById('soundToggle').innerHTML = soundMuted ? '🔇' : '🔊';
-};
-
-// ========== 初始化 ==========
-initWorldArray();
-setupDifficultyButtons();
-updateAllUIText();
 requestAnimationFrame(gameLoop);
-
-function playHurtSound() {
-    if (soundMuted) return;
-    const text = currentLang === 'en' ? 'ow' : '啊';
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.volume = 1;
-    utter.rate = 1.2;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
-}
 </script>
 </body>
 </html>
