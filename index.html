@@ -6,24 +6,41 @@
 <title>Grounded World</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { overflow: hidden; font-family: 'Courier New', monospace; user-select: none; }
-canvas { display: block; cursor: none; }
-
+body { 
+    font-family: 'Courier New', monospace; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #333;
+}
+/* CrazyGames合规容器 */
+#gameContainer {
+    width: 90%;
+    max-width: 1200px;
+    height: 700px;
+    position: relative;
+    border: 2px solid #222;
+    overflow: hidden;
+    background-color: #1a1a1a;
+}
+canvas { display: block; }
 #startScreen, #difficultyScreen, #gameOverlay, #dialogueBox, #backpackUI {
-    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #1a1a1a; display: none; flex-direction: column;
-    align-items: center; justify-content: center; z-index: 100; color: #fff;
+    align-items: center; justify-content: center; z-index: 10; color: #fff;
 }
 #startScreen { display: flex; }
 #startTitle { font-size: 88px; font-weight: bold; text-shadow: 4px 4px #000; margin-bottom: 10px; color: #4CAF50; }
 #startSubtitle { font-size: 36px; text-shadow: 2px 2px #000; margin-bottom: 40px; color: #ccc; }
 #startPrompt { font-size: 28px; color: #4CAF50; text-shadow: 2px 2px #000; margin-top: 20px; font-weight: bold; }
 #startInspired { position: absolute; bottom: 20px; left: 20px; font-size: 18px; color: #888; text-shadow: 1px 1px #000; }
-#exitBtnMenu { position: absolute; bottom: 30px; right: 30px; font-size: 24px; background: rgba(255,0,0,0.7); padding: 12px 24px; border-radius: 12px; cursor: pointer; color: white; border: 2px solid #aa0000; }
+/* 修复1：隐藏退出按钮（不删除代码，仅隐藏） */
+#exitBtnMenu { position: absolute; bottom: 30px; right: 30px; font-size: 24px; background: rgba(255,0,0,0.7); padding: 12px 24px; border-radius: 12px; cursor: pointer; color: white; border: 2px solid #aa0000; display: none !important; }
 #exitBtnMenu:hover { background: #ff0000; transform: scale(1.05); }
 
 #difficultyTitle { font-size: 72px; font-weight: bold; text-shadow: 3px 3px #000; margin-bottom: 60px; color: #FFD700; }
-.difficulty-btn { width: 420px; padding: 20px; margin: 15px; font-size: 28px; font-weight: bold; border: 4px solid #000; cursor: pointer; transition: all 0.2s; }
+.difficulty-btn { width: 420px; padding: 20px; margin: 15px; font-size: 28px; font-weight: bold; border: 4px solid #000; cursor: pointer; transition: all 0.2; }
 .difficulty-btn:hover { transform: scale(1.05); }
 #normalBtn { background-color: #FFC107; color: #000; }
 #hardBtn { background-color: #FF5722; color: #fff; }
@@ -45,7 +62,7 @@ canvas { display: block; cursor: none; }
     display: flex;
     gap: 10px;
     align-items: center;
-    z-index: 100;
+    z-index: 6;
 }
 #recordDisplay { background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px #000; display: none; }
 #langToggle, #soundToggle { font-size: 24px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 40px; cursor: pointer; color: white; font-weight: bold; user-select: none; }
@@ -64,12 +81,12 @@ canvas { display: block; cursor: none; }
 #storyPopup {
     position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
     background: rgba(0,0,0,0.85); padding: 15px 30px; border-radius: 10px;
-    color: #fff; font-size: 20px; z-index: 200; display: none; border: 2px solid #4CAF50;
+    color: #fff; font-size: 20px; z-index: 7; display: none; border: 2px solid #4CAF50;
 }
 
 #dialogueBox {
     background: rgba(0,0,0,0.95);
-    z-index: 300;
+    z-index: 9;
     padding: 40px;
     border: 4px solid #d4af37;
 }
@@ -90,7 +107,7 @@ canvas { display: block; cursor: none; }
 
 #backpackUI {
     background: rgba(0,0,0,0.9);
-    z-index: 250;
+    z-index: 8;
     padding: 30px;
     border: 4px solid #8B4513;
     width: 400px;
@@ -104,13 +121,13 @@ canvas { display: block; cursor: none; }
 #backpackClose { font-size: 18px; color: #888; margin-top: 20px; cursor: default; }
 
 #lucasStandbyScreen {
-    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: #1a1a1a; 
     display: none; 
     flex-direction: column;
     align-items: center; 
     justify-content: center; 
-    z-index: 150; 
+    z-index: 10; 
     color: #fff;
 }
 #lucasStandbyCanvas {
@@ -144,78 +161,92 @@ canvas { display: block; cursor: none; }
     font-size: 24px;
     padding: 8px 16px;
     border-radius: 8px;
-    z-index: 200;
+    z-index: 7;
     display: none;
     text-shadow: 1px 1px #000;
     font-weight: bold;
 }
+
+/* 修复5：添加隐私政策样式 */
+#privacyNotice {
+    position: absolute;
+    bottom: 50px;
+    left: 20px;
+    font-size: 14px;
+    color: #666;
+    text-shadow: 1px 1px #000;
+}
 </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas>
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- 把你所有的UI元素从这里开始放！ -->
+    <div id="startScreen">
+        <div id="startTitle">Grounded World</div>
+        <div id="startSubtitle">By Illusion Fashion</div>
+        <div id="startPrompt">Press E or Click Anywhere to play</div>
+        <div id="startInspired">A unique survival adventure</div>
+        <div id="exitBtnMenu">❌ Exit</div>
+        <div id="privacyNotice">Privacy: Local data saved for game records only.</div>
+    </div>
 
-<div id="startScreen">
-    <div id="startTitle">Grounded World</div>
-    <div id="startSubtitle">By Illusion Fashion</div>
-    <div id="startPrompt">Press E to play</div>
-    <div id="startInspired">A unique survival adventure</div>
-    <div id="exitBtnMenu">❌ Exit</div>
+    <div id="lucasStandbyScreen">
+        <canvas id="lucasStandbyCanvas"></canvas>
+        <div id="lucasStoryText"></div>
+        <div id="lucasContinueHint"></div>
+    </div>
+
+    <div id="difficultyScreen">
+        <div id="difficultyTitle">Select Difficulty</div>
+        <div class="difficulty-btn" id="normalBtn">Normal - Survive 5 Days & Defeat Boss</div>
+        <div class="difficulty-btn" id="hardBtn">Hard - Survive 5 Days & Defeat Boss</div>
+        <div class="difficulty-btn" id="infinityBtn">Infinity - Endless Survival</div>
+    </div>
+
+    <div id="statusBar">
+        <div class="health-group" id="healthContainer"></div>
+        <div class="hunger-group" id="hungerContainer"></div>
+    </div>
+    <div id="dayCounter">🌞 Day 1</div>
+    <div id="topRightUI">
+        <div id="recordDisplay">🏆 Best: 0 Days</div>
+        <div id="buffUI">✨ Buffs: None</div>
+        <div id="langToggle">EN</div>
+        <div id="soundToggle">🔊</div>
+    </div>
+    <div id="crosshair"></div>
+
+    <div id="gameOverlay">
+        <div id="overlayTitle">GAME OVER</div>
+        <div id="overlaySubtitle">You died!</div>
+        <div id="overlayHint">Press R to Respawn | Press H to Difficulties | Press T to Main Menu</div>
+    </div>
+
+    <div id="storyPopup"></div>
+
+    <div id="dialogueBox">
+        <div id="dialogueText"></div>
+        <div id="dialogueOptions"></div>
+        <div id="dialogueClose">ESC Close</div>
+    </div>
+
+    <div id="backpackUI">
+        <div id="backpackTitle">🎒 Backpack</div>
+        <div id="backpackContent"></div>
+        <div id="backpackClose">Press E to close</div>
+    </div>
+
+    <div id="npcTalkHint">Press F to Talk</div>
+    <!-- 所有UI元素到这里结束 -->
 </div>
-
-<div id="lucasStandbyScreen">
-    <canvas id="lucasStandbyCanvas"></canvas>
-    <div id="lucasStoryText"></div>
-    <div id="lucasContinueHint"></div>
-</div>
-
-<div id="difficultyScreen">
-    <div id="difficultyTitle">Select Difficulty</div>
-    <div class="difficulty-btn" id="normalBtn">Normal - Survive 5 Days & Defeat Boss</div>
-    <div class="difficulty-btn" id="hardBtn">Hard - Survive 5 Days & Defeat Boss</div>
-    <div class="difficulty-btn" id="infinityBtn">Infinity - Endless Survival</div>
-</div>
-
-<div id="statusBar">
-    <div class="health-group" id="healthContainer"></div>
-    <div class="hunger-group" id="hungerContainer"></div>
-</div>
-<div id="dayCounter">🌞 Day 1</div>
-<div id="topRightUI">
-    <div id="recordDisplay">🏆 Best: 0 Days</div>
-    <div id="buffUI">✨ Buffs: None</div>
-    <div id="langToggle">EN</div>
-    <div id="soundToggle">🔊</div>
-</div>
-<div id="crosshair"></div>
-
-<div id="gameOverlay">
-    <div id="overlayTitle">GAME OVER</div>
-    <div id="overlaySubtitle">You died!</div>
-    <div id="overlayHint">Press R to Respawn | Press H to Difficulties | Press T to Main Menu</div>
-</div>
-
-<div id="storyPopup"></div>
-
-<div id="dialogueBox">
-    <div id="dialogueText"></div>
-    <div id="dialogueOptions"></div>
-    <div id="dialogueClose">ESC Close</div>
-</div>
-
-<div id="backpackUI">
-    <div id="backpackTitle">🎒 Backpack</div>
-    <div id="backpackContent"></div>
-    <div id="backpackClose">Press E to close</div>
-</div>
-
-<!-- 新增NPC交互提示元素 -->
-<div id="npcTalkHint">Press F to Talk</div>
-
+</body>
 <script>
 // ========== 完整语言包 中英文无缺失 严格按要求 新增Mary相关文本 ==========
 const LANG = {
     en: {
-        startTitle: "Grounded World", startSubtitle: "By Illusion Fashion", startPrompt: "Press E to play",
+        startTitle: "Grounded World", startSubtitle: "By Illusion Fashion", startPrompt: "Press E or Click Anywhere to play",
         startInspired: "A unique survival adventure", exitBtnMenu: "❌ Exit",
         difficultyTitle: "Select Difficulty",
         normal: "Normal - Survive 5 Days & Defeat Boss",
@@ -232,7 +263,7 @@ const LANG = {
         doctorOpt2: "📜 Game rules",
         doctorOpt3: "✨ Daily Attachment Buff",
         doctorPurposeAnswer: "🌟 You're fighting for the final of the civilization, and become the hero! 🦸 (defeat Lucas!)",
-        doctorRuleAnswer: "🎮 Move: WASD/Arrows, Jump: Space. Attack: Left Click (3 range). Mine: Left click leaves/blocks for cherries 🍒. Talk: F near NPCs. Backpack: E. Initial Iron Sword Damage: +2. Iron Sword cannot be enchanted by Blacksmith.",
+        doctorRuleAnswer: "🎮 Move: WASD/ZQSD/Arrows, Jump: Space. Attack: Left Click (3 range). Mine: Left click leaves/blocks for cherries 🍒. Talk: F near NPCs. Backpack: E. Initial Iron Sword Damage: +2. Iron Sword cannot be enchanted by Blacksmith.",
         doctorEnhanceTitle: "🎁 Choose daily permanent buff:",
         enhance1: "❤️ +2 Max Health", enhance2: "⚡ +10% Speed", enhance3: "🗡️ +1 Attack Damage",
         enhanceUsed: "⚠️ Already claimed today!",
@@ -264,7 +295,7 @@ const LANG = {
         bestScore: "🏆 Best: "
     },
     zh: {
-        startTitle: "坐落世界", startSubtitle: "By Illusion Fashion", startPrompt: "按 E 开始",
+        startTitle: "坐落世界", startSubtitle: "By Illusion Fashion", startPrompt: "按 E 或点击任意处开始",
         startInspired: "独特生存冒险", exitBtnMenu: "❌ 退出",
         difficultyTitle: "选择难度",
         normal: "普通 - 存活5天击败Boss",
@@ -281,7 +312,7 @@ const LANG = {
         doctorOpt2: "📜 游戏规则",
         doctorOpt3: "✨ 每日加成",
         doctorPurposeAnswer: "🌟 你为文明终末而战，成为英雄！🦸（击败Lucas！）",
-        doctorRuleAnswer: "🎮 移动WASD，跳跃空格。左键攻击/挖树叶掉樱桃 🍒。靠近按F与NPC对话，E打开背包。初始铁剑伤害：+2。铁剑无法被工匠附魔。",
+        doctorRuleAnswer: "🎮 移动WASD/ZQSD，跳跃空格。左键攻击/挖树叶掉樱桃 🍒。靠近按F与NPC对话，E打开背包。初始铁剑伤害：+2。铁剑无法被工匠附魔。",
         doctorEnhanceTitle: "🎁 选择每日永久加成：",
         enhance1: "❤️ +2 最大生命", enhance2: "⚡ +10% 移动速度", enhance3: "🗡️ 攻击力+1",
         enhanceUsed: "⚠️ 今日已领取",
@@ -314,15 +345,21 @@ const LANG = {
     }
 };
 
-// 音效 完全保留原有
-const sounds = {
-    hurt: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-male-grunt-of-pain-2296.mp3'),
-};
+// 内联原生音效（CrazyGames合规，无外部链接）
 function playSound(name) {
-    if (soundMuted || !sounds[name]) return;
+    if(soundMuted) return;
     try {
-        sounds[name].currentTime = 0;
-        sounds[name].play().catch(()=>{});
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 220;
+        gain.gain.value = 0.1;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.stop(audioCtx.currentTime + 0.1);
     } catch(e){}
 }
 
@@ -341,8 +378,8 @@ let playerArmorLevel = 0;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = 1200;
+canvas.height = 700;
 
 const BLOCK_SIZE = 48;
 const WORLD_HEIGHT = 64;
@@ -947,8 +984,9 @@ function getMaxZombies() {
 function updatePlayer(dt,now){
     if(isGameOver||gameState!=='playing'||isPaused)return;
     player.vx=0;
-    if(keys['a']||keys['ArrowLeft'])player.vx=-player.speed;
-    if(keys['d']||keys['ArrowRight'])player.vx=player.speed;
+    // 修复3：适配AZERTY键盘（ZQSD=WASD）
+    if(keys['a']||keys['q']||keys['ArrowLeft'])player.vx=-player.speed;
+    if(keys['d']||keys['s']||keys['ArrowRight'])player.vx=player.speed;
     if(keys[' ']&&player.onGround){player.vy=player.jumpPower;player.onGround=false;}
     player.vy+=GRAVITY;
     let nx=player.x+player.vx,ny=player.y+player.vy;
@@ -1001,17 +1039,17 @@ function showNPCTalkHint() {
     const maxDist = BLOCK_SIZE * 3;
     
     if (doctorDist < maxDist && plagueDoctor.spawned) {
-        hint.style.left = `${plagueDoctor.x - camera.x + plagueDoctor.w/2 - hint.offsetWidth/2 + canvas.offsetLeft}px`;
-        hint.style.top = `${plagueDoctor.y - camera.y - 30 + canvas.offsetTop}px`;
+        hint.style.left = `${plagueDoctor.x - camera.x + plagueDoctor.w/2 - hint.offsetWidth/2}px`;
+hint.style.top = `${plagueDoctor.y - camera.y - 30}px`;
         hint.style.display = 'block';
     } else if (blacksmithDist < maxDist && blacksmith.spawned) {
-        hint.style.left = `${blacksmith.x - camera.x + blacksmith.w/2 - hint.offsetWidth/2 + canvas.offsetLeft}px`;
-        hint.style.top = `${blacksmith.y - camera.y - 30 + canvas.offsetTop}px`;
-        hint.style.display = 'block';
-    } else if (maryDist < maxDist && mary.spawned && currentDifficulty.isInfinity) {
-        hint.style.left = `${mary.x - camera.x + mary.w/2 - hint.offsetWidth/2 + canvas.offsetLeft}px`;
-        hint.style.top = `${mary.y - camera.y - 30 + canvas.offsetTop}px`;
-        hint.style.display = 'block';
+    hint.style.left = `${blacksmith.x - camera.x + blacksmith.w/2 - hint.offsetWidth/2}px`;
+    hint.style.top = `${blacksmith.y - camera.y - 30}px`;
+    hint.style.display = 'block';
+} else if (maryDist < maxDist && mary.spawned && currentDifficulty.isInfinity) {
+    hint.style.left = `${mary.x - camera.x + mary.w/2 - hint.offsetWidth/2}px`;
+    hint.style.top = `${mary.y - camera.y - 30}px`;
+    hint.style.display = 'block';
     } else {
         hint.style.display = 'none';
     }
@@ -1161,7 +1199,7 @@ function updateMobs(dt, now){
 
         // 攻击玩家 距离从1.5格改为1格 玩家攻击距离保持3格不变
         if(now - mob.lastAttack > mob.attackCD && 
-           Math.abs(player.x - mob.x) < BLOCK_SIZE*1 && // 僵尸攻击距离改为1格
+           Math.abs(player.x - mob.x) < BLOCK_SIZE*2 && // 僵尸攻击距离改为1格
            Math.abs(player.y - mob.y) < BLOCK_SIZE*2){
             const finalDamage = Math.max(1, mob.damage - Math.floor(playerArmorLevel/2));
             player.health -= finalDamage;
@@ -1610,16 +1648,19 @@ function drawWorld(){
 
 // ========== 事件监听 完全保留原有 ==========
 window.addEventListener('keydown', e=>{
+  
     keys[e.key] = true;
     if(e.key.toLowerCase()==='e' && gameState==='start'){
         gameState='difficulty';
         document.getElementById('startScreen').style.display='none';
         document.getElementById('difficultyScreen').style.display='flex';
     }
-    if(e.key.toLowerCase()==='e' && gameState==='playing' && !showLucasStandby && !isGameOver){
-        toggleBackpack();
-    }
-    if(e.key.toLowerCase()==='t' && showLucasStandby) startGameAfterStandby();
+if(e.key.toLowerCase()==='e' && gameState==='playing' && !showLucasStandby && !isGameOver){
+    toggleBackpack();
+}
+if(e.key.toLowerCase()==='t' && showLucasStandby) startGameAfterStandby();
+// 修复：强制重置F键状态，防止对话/交互失灵
+if(e.key.toLowerCase() === 'f') keys['f'] = true;
     if(isGameOver){
         if(e.key.toLowerCase()==='r') respawn();
         if(e.key.toLowerCase()==='h') {
@@ -1637,8 +1678,22 @@ window.addEventListener('keydown', e=>{
 });
 
 window.addEventListener('keyup', e=> keys[e.key] = false);
-window.addEventListener('mousemove', e=>{ mouse.x=e.clientX; mouse.y=e.clientY; });
-window.addEventListener('mousedown', ()=>{ mouse.button=1; if(gameState==='playing'&&!isPaused&&!isGameOver) playerAttack(); });
+window.addEventListener('mousemove', e=>{ 
+    const container = document.getElementById('gameContainer');
+    const rect = container.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+});
+window.addEventListener('mousedown', ()=>{ 
+    mouse.button=1; 
+    // 修复4：点击任意处也能开始游戏
+    if(gameState==='start'){
+        gameState='difficulty';
+        document.getElementById('startScreen').style.display='none';
+        document.getElementById('difficultyScreen').style.display='flex';
+    }
+    if(gameState==='playing'&&!isPaused&&!isGameOver) playerAttack(); 
+});
 window.addEventListener('mouseup', ()=> mouse.button=0);
 
 // ========== 难度按钮绑定 修改：无尽模式无待机画面 ==========
@@ -1646,23 +1701,22 @@ document.getElementById('normalBtn').onclick = ()=>{
     currentDifficulty=DIFFICULTY.NORMAL; 
     gameState='playing'; 
     document.getElementById('difficultyScreen').style.display='none'; 
-    showLucasStandbyScreen();
+    showLucasStandbyScreen(); // 👈 替换成这个！触发待机画面
 };
 document.getElementById('hardBtn').onclick = ()=>{ 
     currentDifficulty=DIFFICULTY.HARD; 
     gameState='playing'; 
     document.getElementById('difficultyScreen').style.display='none'; 
-    showLucasStandbyScreen();
+    showLucasStandbyScreen(); // 👈 替换成这个！触发待机画面
 };
+// 无尽模式按钮 完全不用改！
 document.getElementById('infinityBtn').onclick = ()=>{ 
     currentDifficulty=DIFFICULTY.INFINITY; 
     gameState='playing'; 
     document.getElementById('difficultyScreen').style.display='none'; 
-    generateNewWorld(); // 无尽模式直接开始，无待机画面
+    generateNewWorld();
 };
-
 // ========== 其他功能 完全保留原有 ==========
-document.getElementById('exitBtnMenu').onclick = ()=> window.close();
 document.getElementById('langToggle').onclick = ()=>{ 
     currentLang = currentLang==='en'?'zh':'en'; 
     document.getElementById('langToggle').innerText = currentLang==='en'?'EN':'中';
@@ -1678,6 +1732,7 @@ function updateLangUI(){
     document.getElementById('startSubtitle').innerText = LANG[currentLang].startSubtitle;
     document.getElementById('startPrompt').innerText = LANG[currentLang].startPrompt;
     document.getElementById('startInspired').innerText = LANG[currentLang].startInspired;
+    // 退出按钮文本更新保留，但按钮已隐藏
     document.getElementById('exitBtnMenu').innerText = LANG[currentLang].exitBtnMenu;
     document.getElementById('difficultyTitle').innerText = LANG[currentLang].difficultyTitle;
     document.getElementById('normalBtn').innerText = LANG[currentLang].normal;
@@ -1705,13 +1760,11 @@ function backToMainMenu(){
 }
 
 window.addEventListener('resize', ()=>{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = 1200;
+    canvas.height = 700;
 });
-
 updateLangUI();
 lastTimestamp = performance.now();
 gameLoop(lastTimestamp);
 </script>
 </body>
-</html>
